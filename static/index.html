@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuminAria — AI 音乐生成</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top bar -->
+        <header class="topbar">
+            <h1 class="logo">LuminAria</h1>
+            <button id="historyToggleBtn" class="btn-ghost">历史记录</button>
+        </header>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <!-- Input section -->
+            <section class="input-section">
+                <label for="promptInput" class="input-label">描述你想要的音乐...</label>
+                <textarea id="promptInput" class="prompt-input" rows="3"
+                    placeholder="例如：轻柔的钢琴曲，像下雨天的咖啡馆"></textarea>
+
+                <div class="duration-group">
+                    <span class="input-label">时长：</span>
+                    <div class="duration-options" id="durationOptions">
+                        <button class="dur-btn" data-duration="30">30s</button>
+                        <button class="dur-btn" data-duration="60">1min</button>
+                        <button class="dur-btn active" data-duration="90">1min30s</button>
+                        <button class="dur-btn" data-duration="120">2min</button>
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="btn-generate">✨ 生成音乐</button>
+            </section>
+
+            <!-- Status area -->
+            <section id="statusSection" class="status-section hidden">
+                <div id="statusMessage" class="status-message"></div>
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+            </section>
+
+            <!-- Result section -->
+            <section id="resultSection" class="result-section hidden">
+                <div id="enhancedPrompt" class="enhanced-prompt"></div>
+                <div class="player-section">
+                    <audio id="audioPlayer" controls class="audio-player"></audio>
+                    <a id="downloadLink" class="btn-download" download>⬇ 下载 MP3</a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- History panel (overlay) -->
+    <div id="historyOverlay" class="overlay hidden">
+        <div class="history-panel">
+            <div class="history-header">
+                <h2>生成历史</h2>
+                <button id="historyCloseBtn" class="btn-ghost">关闭</button>
+            </div>
+            <div id="historyList" class="history-list"></div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

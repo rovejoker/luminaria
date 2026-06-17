@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  luminaria:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: luminaria
+    ports:
+      - "8000:8000"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+      - audio_output:/app/output
+      - db_data:/app/data
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_ENDPOINT=https://hf-mirror.com
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  model_cache:
+    name: luminaria_model_cache
+  audio_output:
+    name: luminaria_audio_output
+  db_data:
+    name: luminaria_db_data
