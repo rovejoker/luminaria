@@ -21,8 +21,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Use Tsinghua pip mirror with official PyPI as fallback
-RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip3 config set global.extra-index-url https://pypi.org/simple
+RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt

@@ -1,5 +1,6 @@
 """FastAPI application — routes, SSE streaming, concurrency control."""
 import asyncio
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -85,15 +86,20 @@ async def generate(request: GenerateRequest):
             enhanced_prompt, was_enhanced = await enhance_prompt(request.user_input)
 
             # Stage 2: Generate audio
-            yield await push("generating", "正在生成音乐，预计需要 30-60 秒...")
+            yield await push("generating", "正在生成音乐，预计需要 30-60 秒..." +
+                             ("（注意：运行在 CPU 上，可能需要 30-60 分钟）" if not torch.cuda.is_available() else ""))
 
             try:
-                # Run blocking generation in thread to not block the event loop
-                wav_path, actual_duration = await asyncio.to_thread(
-                    generate_audio, enhanced_prompt, request.duration
+                wav_path, actual_duration = await asyncio.wait_for(
+                    asyncio.to_thread(generate_audio, enhanced_prompt, request.duration),
+                    timeout=GENERATION_TIMEOUT_SECONDS,
                 )
+            except asyncio.TimeoutError:
+                error_data = json.dumps({"stage": "error", "message": f"生成超时（{GENERATION_TIMEOUT_SECONDS}s），模型可能运行在 CPU 上"})
+                yield {"event": "error", "data": error_data}
+                return
             except RuntimeError as e:
-                error_data = f'{{"stage":"error","message":"{str(e)}"}}'
+                error_data = json.dumps({"stage": "error", "message": str(e)})
                 yield {"event": "error", "data": error_data}
                 return
 
@@ -102,7 +108,7 @@ async def generate(request: GenerateRequest):
             try:
                 mp3_path = await asyncio.to_thread(wav_to_mp3, wav_path)
             except RuntimeError as e:
-                error_data = f'{{"stage":"error","message":"{str(e)}"}}'
+                error_data = json.dumps({"stage": "error", "message": str(e)})
                 yield {"event": "error", "data": error_data}
                 return
 
@@ -117,7 +123,6 @@ async def generate(request: GenerateRequest):
             )
 
             # Stage 5: Complete
-            import json
             complete_data = json.dumps({
                 "id": row_id,
                 "user_input": request.user_input,
@@ -129,7 +134,7 @@ async def generate(request: GenerateRequest):
             })
             yield {"event": "complete", "data": complete_data}
 
-    return EventSourceResponse(event_stream())
+    return EventSourceResponse(event_stream(), ping=15)
 
 
 # --- History endpoints ---

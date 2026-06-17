@@ -1,4 +1,4 @@
-version: "3.8"
+name: luminaria
 
 services:
   luminaria:
@@ -10,8 +10,10 @@ services:
       - "8000:8000"
     volumes:
       - model_cache:/root/.cache/huggingface
-      - audio_output:/app/output
-      - db_data:/app/data
+      - ./output:/app/output
+      - ./data:/app/data
+      - ./app:/app/app
+      - ./static:/app/static
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
       - HF_ENDPOINT=https://hf-mirror.com
@@ -29,7 +31,3 @@ services:
 volumes:
   model_cache:
     name: luminaria_model_cache
-  audio_output:
-    name: luminaria_audio_output
-  db_data:
-    name: luminaria_db_data

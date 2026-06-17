@@ -71,6 +71,7 @@ generateBtn.addEventListener('click', async () => {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let lastEvent = '';
 
         while (true) {
             const { done, value } = await reader.read();
@@ -82,16 +83,18 @@ generateBtn.addEventListener('click', async () => {
 
             for (const line of lines) {
                 if (line.startsWith('event: ')) {
+                    lastEvent = line.slice(7).trim();
                     continue;
                 }
                 if (line.startsWith('data: ')) {
                     const dataStr = line.slice(6);
                     try {
                         const data = JSON.parse(dataStr);
-                        handleSSEEvent(data);
+                        handleSSEEvent(data, lastEvent);
                     } catch {
                         // incomplete JSON, will be retried
                     }
+                    lastEvent = '';
                 }
             }
         }
@@ -99,22 +102,51 @@ generateBtn.addEventListener('click', async () => {
     } catch (err) {
         showStatus(`网络错误: ${err.message}`, 0);
     }
-    resetGenerateBtn();
+    // Only reset UI if not already done by an event handler
+    if (state.generating) {
+        resetGenerateBtn();
+    }
 });
 
-function handleSSEEvent(data) {
-    if (data.stage === 'enhancing') {
-        showStatus(data.message, 10);
-        generateBtn.textContent = '✨ 优化提示词中...';
-    } else if (data.stage === 'generating') {
-        showStatus(data.message, 40);
-        generateBtn.textContent = '🎵 生成音乐中...';
-    } else if (data.stage === 'converting') {
-        showStatus(data.message, 80);
-        generateBtn.textContent = '🔄 转换格式中...';
-    } else if (data.stage === 'error') {
-        showStatus(`错误: ${data.message}`, 0);
+/**
+ * Handle incoming SSE events.
+ *
+ * Event types (from the `event:` line):
+ *   "status" → data.stage ∈ {enhancing, generating, converting, error}
+ *   "complete" → data has filename/id (no stage field)
+ *   "error" → (reserved for future use)
+ */
+function handleSSEEvent(data, eventName) {
+    // Complete event — data has id, filename, etc.
+    if (data.stage === undefined) {
+        hideStatus();
+        state.generating = false;
+        generateBtn.disabled = false;
+        generateBtn.textContent = '✨ 生成音乐';
+        showResult(data.prompt_enhanced, data.filename, data.enhanced);
+        return;
     }
+
+    // Error event — keep the error visible, do NOT reset UI (hides status)
+    if (data.stage === 'error') {
+        showStatus(`错误: ${data.message}`, 0);
+        progressFill.style.background = '#e74c3c';
+        state.generating = false;
+        generateBtn.disabled = false;
+        generateBtn.textContent = '✨ 生成音乐';
+        return;
+    }
+
+    // Status events (enhancing, generating, converting)
+    const stageMessages = {
+        enhancing: { msg: '正在优化提示词...', btn: '✨ 优化提示词中...', pct: 10 },
+        generating: { msg: '正在生成音乐，预计需要 30-60 秒...', btn: '🎵 生成音乐中...', pct: 40 },
+        converting: { msg: '正在转换音频格式...', btn: '🔄 转换格式中...', pct: 80 },
+    };
+
+    const s = stageMessages[data.stage] || { msg: data.message, btn: '⏳ 处理中...', pct: 50 };
+    showStatus(data.message || s.msg, s.pct);
+    generateBtn.textContent = s.btn;
 }
 
 function showStatus(msg, progressPercent) {
@@ -143,29 +175,6 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
-// SSE 'complete' event is handled separately — it arrives in the same stream
-// but we need to intercept it. The trick: we listen for it inline.
-// Actually, the handleSSEEvent will catch the "complete" stage too.
-// Let's extend handleSSEEvent.
-const originalHandleSSE = handleSSEEvent;
-handleSSEEvent = function(data) {
-    if (data.stage === 'error') {
-        originalHandleSSE(data);
-        resetGenerateBtn();
-        return;
-    }
-    if (!data.stage) {
-        // This is the 'complete' event — it has id, filename, etc.
-        hideStatus();
-        state.generating = false;
-        generateBtn.disabled = false;
-        generateBtn.textContent = '✨ 生成音乐';
-        showResult(data.prompt_enhanced, data.filename, data.enhanced);
-        return;
-    }
-    originalHandleSSE(data);
-};
 
 function showResult(promptEnhanced, filename, wasEnhanced) {
     resultSection.classList.remove('hidden');
