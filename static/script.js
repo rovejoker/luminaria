@@ -1,9 +1,10 @@
-// LuminAria — client-side logic: SSE generation, history CRUD, audio player
+// LuminAria — Victorian classical client-side logic
 
 const state = {
-    duration: 90,           // selected duration in seconds
-    generating: false,      // generation in progress
-    audioFilename: null,    // current audio filename
+    duration: 90,
+    generating: false,
+    audioFilename: null,
+    promptExpanded: false,
 };
 
 // --- DOM refs ---
@@ -12,26 +13,64 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 const promptInput = $('#promptInput');
 const generateBtn = $('#generateBtn');
+const durationSlider = $('#durationSlider');
+const durationValue = $('#durationValue');
 const durationOptions = $('#durationOptions');
 const statusSection = $('#statusSection');
 const statusMessage = $('#statusMessage');
 const progressFill = $('#progressFill');
 const resultSection = $('#resultSection');
+const promptHeader = $('#promptHeader');
+const promptBody = $('#promptBody');
+const promptArrow = $('#promptArrow');
 const enhancedPrompt = $('#enhancedPrompt');
 const audioPlayer = $('#audioPlayer');
+const playBtn = $('#playBtn');
+const prevBtn = $('#prevBtn');
+const nextBtn = $('#nextBtn');
+const progressTrack = $('#progressTrack');
+const progressCurrent = $('#progressCurrent');
+const progressThumb = $('#progressThumb');
+const currentTime = $('#currentTime');
+const totalTime = $('#totalTime');
+const volumeRange = $('#volumeRange');
+const volumeFill = $('#volumeFill');
+const playerMeta = $('#playerMeta');
 const downloadLink = $('#downloadLink');
 const historyToggleBtn = $('#historyToggleBtn');
 const historyOverlay = $('#historyOverlay');
 const historyCloseBtn = $('#historyCloseBtn');
 const historyList = $('#historyList');
+const deleteAllBtn = $('#deleteAllBtn');
+const confirmModal = $('#confirmModal');
+const modalCancelBtn = $('#modalCancelBtn');
+const modalConfirmBtn = $('#modalConfirmBtn');
 
-// --- Duration selection ---
+// --- Duration slider + buttons sync ---
+durationSlider.addEventListener('input', () => {
+    state.duration = parseInt(durationSlider.value);
+    durationValue.textContent = `${state.duration}秒`;
+    $$('.dur-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.duration) === state.duration);
+    });
+});
+
 durationOptions.addEventListener('click', (e) => {
     const btn = e.target.closest('.dur-btn');
     if (!btn) return;
     state.duration = parseInt(btn.dataset.duration);
+    durationSlider.value = state.duration;
+    durationValue.textContent = `${state.duration}秒`;
     $$('.dur-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+});
+
+// --- Collapsible prompt ---
+promptHeader.addEventListener('click', () => {
+    state.promptExpanded = !state.promptExpanded;
+    promptBody.classList.toggle('expanded', state.promptExpanded);
+    promptArrow.classList.toggle('collapsed', !state.promptExpanded);
+    promptArrow.classList.toggle('expanded', state.promptExpanded);
 });
 
 // --- Generate ---
@@ -92,54 +131,42 @@ generateBtn.addEventListener('click', async () => {
                         const data = JSON.parse(dataStr);
                         handleSSEEvent(data, lastEvent);
                     } catch {
-                        // incomplete JSON, will be retried
+                        // incomplete JSON, will retry
                     }
                     lastEvent = '';
                 }
             }
         }
-
     } catch (err) {
         showStatus(`网络错误: ${err.message}`, 0);
     }
-    // Only reset UI if not already done by an event handler
     if (state.generating) {
         resetGenerateBtn();
     }
 });
 
-/**
- * Handle incoming SSE events.
- *
- * Event types (from the `event:` line):
- *   "status" → data.stage ∈ {enhancing, generating, converting, error}
- *   "complete" → data has filename/id (no stage field)
- *   "error" → (reserved for future use)
- */
-function handleSSEEvent(data, eventName) {
-    // Complete event — data has id, filename, etc.
+function handleSSEEvent(data) {
+    // Complete event — no stage field
     if (data.stage === undefined) {
         hideStatus();
         state.generating = false;
         generateBtn.disabled = false;
-        generateBtn.textContent = '✨ 生成音乐';
+        generateBtn.textContent = '生成音乐';
         showResult(data.prompt_enhanced, data.filename, data.enhanced);
         return;
     }
 
-    // Error event — keep the error visible, do NOT reset UI (hides status)
     if (data.stage === 'error') {
         showStatus(`错误: ${data.message}`, 0);
-        progressFill.style.background = '#e74c3c';
+        progressFill.style.background = '#8b4a4a';
         state.generating = false;
         generateBtn.disabled = false;
-        generateBtn.textContent = '✨ 生成音乐';
+        generateBtn.textContent = '生成音乐';
         return;
     }
 
-    // Status events (enhancing, generating, converting)
     const stageMessages = {
-        enhancing: { msg: '正在优化提示词...', btn: '✨ 优化提示词中...', pct: 10 },
+        enhancing: { msg: '正在优化提示词...', btn: '⏳ 优化提示词中...', pct: 10 },
         generating: { msg: '正在生成音乐，预计需要 30-60 秒...', btn: '🎵 生成音乐中...', pct: 40 },
         converting: { msg: '正在转换音频格式...', btn: '🔄 转换格式中...', pct: 80 },
     };
@@ -161,12 +188,13 @@ function hideStatus() {
 
 function hideResult() {
     resultSection.classList.add('hidden');
+    audioPlayer.pause();
 }
 
 function resetGenerateBtn() {
     state.generating = false;
     generateBtn.disabled = false;
-    generateBtn.textContent = '✨ 生成音乐';
+    generateBtn.textContent = '生成音乐';
     hideStatus();
 }
 
@@ -180,15 +208,90 @@ function showResult(promptEnhanced, filename, wasEnhanced) {
     resultSection.classList.remove('hidden');
 
     if (wasEnhanced && promptEnhanced) {
-        enhancedPrompt.innerHTML = `<strong style="color:var(--gold-dim);font-size:0.8rem;">优化后的提示词</strong><br>${escapeHtml(promptEnhanced)}`;
+        enhancedPrompt.innerHTML = escapeHtml(promptEnhanced);
+        // Reset prompt to collapsed by default
+        if (state.promptExpanded) {
+            promptBody.classList.remove('expanded');
+            promptArrow.classList.add('collapsed');
+            promptArrow.classList.remove('expanded');
+            state.promptExpanded = false;
+        }
     } else {
-        enhancedPrompt.innerHTML = '<span style="color:var(--text-secondary);">（未进行提示词优化）</span>';
+        enhancedPrompt.innerHTML = '<span style="color:var(--text-muted);">（未进行提示词优化）</span>';
     }
 
     audioPlayer.src = `/output/${filename}`;
     downloadLink.href = `/output/${filename}`;
     downloadLink.download = filename;
+    playerMeta.textContent = formatDateForPlayer(new Date());
+
     audioPlayer.load();
+    playBtn.textContent = '▶';
+    progressCurrent.style.width = '0%';
+    progressThumb.style.left = '0%';
+    currentTime.textContent = '00:00';
+
+    audioPlayer.addEventListener('loadedmetadata', () => {
+        totalTime.textContent = formatTime(audioPlayer.duration);
+    }, { once: true });
+
+    resultSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- Audio player controls ---
+playBtn.addEventListener('click', () => {
+    if (audioPlayer.paused) {
+        audioPlayer.play();
+        playBtn.textContent = '⏸';
+    } else {
+        audioPlayer.pause();
+        playBtn.textContent = '▶';
+    }
+});
+
+audioPlayer.addEventListener('ended', () => {
+    playBtn.textContent = '▶';
+    progressCurrent.style.width = '0%';
+    progressThumb.style.left = '0%';
+    currentTime.textContent = '00:00';
+});
+
+audioPlayer.addEventListener('timeupdate', () => {
+    if (audioPlayer.duration) {
+        const pct = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        progressCurrent.style.width = `${pct}%`;
+        progressThumb.style.left = `${pct}%`;
+        currentTime.textContent = formatTime(audioPlayer.currentTime);
+    }
+});
+
+// Click on progress track to seek
+progressTrack.addEventListener('click', (e) => {
+    if (!audioPlayer.duration) return;
+    const rect = progressTrack.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    audioPlayer.currentTime = pct * audioPlayer.duration;
+});
+
+// Volume
+volumeRange.addEventListener('input', () => {
+    const val = parseInt(volumeRange.value);
+    audioPlayer.volume = val / 100;
+    volumeFill.style.width = `${val}%`;
+});
+
+function formatTime(sec) {
+    if (!sec || isNaN(sec)) return '00:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatDateForPlayer(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d} 生成`;
 }
 
 // --- History ---
@@ -207,24 +310,23 @@ async function loadHistory() {
         const data = await res.json();
         renderHistory(data.items || []);
     } catch (err) {
-        historyList.innerHTML = '<p style="color:var(--text-secondary);">加载失败</p>';
+        historyList.innerHTML = '<p style="color:var(--text-muted);">加载失败</p>';
     }
 }
 
 function renderHistory(items) {
     if (items.length === 0) {
-        historyList.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:40px 0;">暂无生成记录</p>';
+        historyList.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px 0;">暂无生成记录</p>';
         return;
     }
     historyList.innerHTML = items.map(item => `
         <div class="history-item" data-id="${item.id}">
             <div class="hi-date">${formatDate(item.created_at)}</div>
             <div class="hi-prompt">"${escapeHtml(item.user_input)}"</div>
-            <div class="hi-duration">${formatDuration(item.duration)}</div>
             <div class="hi-actions">
                 <button onclick="playFromHistory('${escapeAttr(item.filename)}')">▶ 播放</button>
-                <a href="/output/${escapeAttr(item.filename)}" download>⬇ 下载</a>
-                <button class="btn-delete" onclick="deleteHistory(${item.id}, '${escapeAttr(item.filename)}')">🗑 删除</button>
+                <a href="/output/${escapeAttr(item.filename)}" download>下载</a>
+                <button class="btn-delete" onclick="deleteHistory(${item.id}, '${escapeAttr(item.filename)}')">删除</button>
             </div>
         </div>
     `).join('');
@@ -237,13 +339,6 @@ function formatDate(dateStr) {
     return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function formatDuration(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    if (s === 0) return `${m}min`;
-    return `${m}min${s}s`;
-}
-
 function escapeAttr(str) {
     return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
@@ -254,8 +349,12 @@ function playFromHistory(filename) {
     downloadLink.href = `/output/${filename}`;
     downloadLink.download = filename;
     resultSection.classList.remove('hidden');
-    enhancedPrompt.innerHTML = '<span style="color:var(--text-secondary);">（从历史记录加载）</span>';
+    enhancedPrompt.innerHTML = '<span style="color:var(--text-muted);">（从历史记录加载）</span>';
+    playerMeta.textContent = '从历史记录加载';
     audioPlayer.load();
+    playBtn.textContent = '▶';
+    progressCurrent.style.width = '0%';
+    currentTime.textContent = '00:00';
     resultSection.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -265,7 +364,7 @@ async function deleteHistory(id, filename) {
         const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
         if (res.ok) {
             if (audioPlayer.src.includes(filename)) {
-                audioPlayer.src = '';
+                audioPlayer.pause();
                 resultSection.classList.add('hidden');
             }
             loadHistory();
@@ -274,3 +373,30 @@ async function deleteHistory(id, filename) {
         alert('删除失败');
     }
 }
+
+// --- Delete all with modal ---
+deleteAllBtn.addEventListener('click', () => {
+    confirmModal.classList.add('active');
+});
+
+modalCancelBtn.addEventListener('click', () => {
+    confirmModal.classList.remove('active');
+});
+
+confirmModal.addEventListener('click', (e) => {
+    if (e.target === confirmModal) confirmModal.classList.remove('active');
+});
+
+modalConfirmBtn.addEventListener('click', async () => {
+    confirmModal.classList.remove('active');
+    try {
+        const res = await fetch('/api/history', { method: 'DELETE' });
+        if (res.ok) {
+            audioPlayer.pause();
+            resultSection.classList.add('hidden');
+            loadHistory();
+        }
+    } catch (err) {
+        alert('删除失败');
+    }
+});
