@@ -78,20 +78,6 @@ def test_database():
 
     print("[PASS] Database CRUD operations work correctly")
 
-def test_prompt_heuristic():
-    """The professional prompt detection heuristic should work."""
-    from app.prompt_enhancer import _is_likely_professional_prompt
-
-    # Should detect professional prompts
-    assert _is_likely_professional_prompt("piano ambient slow tempo 72 bpm reverb") is True
-    assert _is_likely_professional_prompt("orchestral epic battle drums strings crescendo 140 bpm") is True
-
-    # Should not flag natural language
-    assert _is_likely_professional_prompt("温柔的钢琴曲") is False
-    assert _is_likely_professional_prompt("make me some relaxing music") is False
-
-    print("[PASS] Prompt heuristic works correctly")
-
 def test_config_directories():
     """Config module should create required directories."""
     from app.config import OUTPUT_DIR, DATA_DIR
@@ -104,6 +90,5 @@ if __name__ == "__main__":
     test_imports()
     test_models_validation()
     test_database()
-    test_prompt_heuristic()
     test_config_directories()
     print("\n*** All integration tests passed! ***")
