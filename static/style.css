@@ -148,14 +148,15 @@ input[type=range] {
   appearance: none;
   flex: 1;
   height: 4px;
-  background: var(--border);
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright), var(--gold-dim));
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  transition: 0.15s ease;
 }
 input[type=range]::-webkit-slider-track {
   height: 4px;
-  background: var(--border);
+  background: transparent;
   border-radius: 2px;
 }
 input[type=range]::-webkit-slider-thumb {
@@ -171,7 +172,7 @@ input[type=range]::-webkit-slider-thumb {
 }
 input[type=range]::-moz-range-track {
   height: 4px;
-  background: var(--border);
+  background: transparent;
   border-radius: 2px;
   border: none;
 }
@@ -373,7 +374,7 @@ input[type=range]::-moz-range-thumb {
 
 .player-card {
   background: var(--bg-secondary);
-  border: 2px solid var(--border-light);
+  border: 2px double var(--gold);
   border-radius: 8px;
   padding: 24px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.4);
