@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class GenerateRequest(BaseModel):
     """POST /api/generate request body."""
     user_input: str = Field(..., min_length=1, max_length=5000, description="User's natural language description")
-    duration: int = Field(..., ge=30, le=120, description="Desired audio duration in seconds")
+    duration: int = Field(..., ge=15, le=120, description="Desired audio duration in seconds")
 
 
 class GenerateResponse(BaseModel):
