@@ -189,6 +189,19 @@ async def delete_history_item(generation_id: int):
     return {"detail": "Deleted"}
 
 
+@app.delete("/api/history")
+async def delete_all_history():
+    """Delete ALL generations and their audio files."""
+    from app.database import delete_all_generations
+
+    filenames = delete_all_generations()
+    for fname in filenames:
+        audio_path = Path(OUTPUT_DIR) / fname
+        if audio_path.exists():
+            audio_path.unlink()
+    return {"detail": f"Deleted {len(filenames)} records"}
+
+
 # --- Main entry point ---
 if __name__ == "__main__":
     import uvicorn
