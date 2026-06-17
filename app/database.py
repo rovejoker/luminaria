@@ -75,3 +75,14 @@ def delete_generation(generation_id: int) -> bool:
     deleted = cursor.rowcount > 0
     conn.close()
     return deleted
+
+
+def delete_all_generations() -> list[str]:
+    """Delete ALL generation records. Returns list of deleted filenames."""
+    conn = _get_connection()
+    rows = conn.execute("SELECT filename FROM generations").fetchall()
+    filenames = [r["filename"] for r in rows]
+    conn.execute("DELETE FROM generations")
+    conn.commit()
+    conn.close()
+    return filenames
