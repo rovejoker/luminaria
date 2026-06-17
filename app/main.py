@@ -13,7 +13,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app.config import OUTPUT_DIR, BASE_DIR, GENERATION_TIMEOUT_SECONDS, PORT, HOST
 from app.models import GenerateRequest, GenerateResponse, HistoryItem, HistoryList
-from app.database import init_db, insert_generation, get_history, get_generation, delete_generation
+from app.database import init_db, insert_generation, get_history, get_generation, delete_generation, delete_all_generations
 from app.prompt_enhancer import enhance_prompt
 from app.generator import generate_audio, wav_to_mp3
 
@@ -192,8 +192,6 @@ async def delete_history_item(generation_id: int):
 @app.delete("/api/history")
 async def delete_all_history():
     """Delete ALL generations and their audio files."""
-    from app.database import delete_all_generations
-
     filenames = delete_all_generations()
     for fname in filenames:
         audio_path = Path(OUTPUT_DIR) / fname
