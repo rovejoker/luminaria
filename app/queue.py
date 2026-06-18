@@ -123,16 +123,16 @@ class TaskQueue:
         return True
 
     def get_snapshot(self) -> list[dict]:
-        """Return ordered list: active (position=0), then queued (1+), then recently done."""
+        """Return ordered list: active (position=0), then queued (1+), then recently done (capped at 3)."""
         items: list[dict] = []
         if self._active and self._active.status not in (
             TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.FAILED
         ):
             items.append(self._active.to_dict(0))
-        for i, t in enumerate(self._pending, start=1):
+        for i, t in enumerate(self._pending[:8], start=1):
             items.append(t.to_dict(i))
-        # Include recently-done items at the end (shown as archived in UI)
-        for t in self._recently_done:
+        # Include recently-done items at the end, capped at 3
+        for t in self._recently_done[:3]:
             items.append(t.to_dict(-1))
         return items
 

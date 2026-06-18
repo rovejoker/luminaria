@@ -14,7 +14,6 @@
                 <span class="logo-icon">♬</span>
                 <span>LuminAria</span>
             </div>
-            <button id="historyToggleBtn" class="btn-ghost">历史记录</button>
         </header>
 
         <!-- Three-column layout -->
@@ -66,7 +65,7 @@
                     <div class="collapsible-prompt">
                         <div id="promptHeader" class="prompt-header">
                             <span class="ornament">⚜️</span>
-                            <span class="title">优化后提示词</span>
+                            <span id="promptTitle" class="title">提示词</span>
                             <span id="promptArrow" class="arrow collapsed">❮</span>
                         </div>
                         <div id="promptBody" class="prompt-body">
@@ -122,28 +121,22 @@
                 </section>
             </section>
 
-            <!-- Right: queue panel -->
+            <!-- Right: queue + history panel -->
             <aside class="right-panel">
                 <div class="queue-panel">
                     <h3 class="queue-title">♬ 任务队列</h3>
                     <div id="queueList" class="queue-list"></div>
+                    <div class="rh-divider"></div>
+                    <div class="rh-section">
+                        <div class="rh-header">
+                            <h3 class="queue-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">📜 历史记录</h3>
+                            <button id="deleteAllBtn" class="rh-delete-all" title="删除全部">🗑</button>
+                        </div>
+                        <div id="rhList" class="rh-list"></div>
+                    </div>
                 </div>
             </aside>
         </main>
-    </div>
-
-    <!-- History overlay -->
-    <div id="historyOverlay" class="overlay hidden">
-        <div class="history-panel">
-            <div class="history-header">
-                <h2>生成历史</h2>
-                <button id="historyCloseBtn" class="history-close">关闭</button>
-            </div>
-            <div id="historyList" class="history-list"></div>
-            <div class="delete-all-section">
-                <button id="deleteAllBtn" class="btn-delete-all">🗑 删除全部记录</button>
-            </div>
-        </div>
     </div>
 
     <!-- Victorian modal for delete confirmation -->

@@ -39,14 +39,6 @@ const volumeRange = $('#volumeRange');
 const volumeFill = $('#volumeFill');
 const playerMeta = $('#playerMeta');
 const downloadLink = $('#downloadLink');
-const historyToggleBtn = $('#historyToggleBtn');
-const historyOverlay = $('#historyOverlay');
-const historyCloseBtn = $('#historyCloseBtn');
-const historyList = $('#historyList');
-const deleteAllBtn = $('#deleteAllBtn');
-const confirmModal = $('#confirmModal');
-const modalCancelBtn = $('#modalCancelBtn');
-const modalConfirmBtn = $('#modalConfirmBtn');
 
 // --- Duration slider + buttons sync ---
 durationSlider.addEventListener('input', () => {
@@ -214,29 +206,18 @@ function updateGenerateButton() {
 promptInput.addEventListener('input', updateGenerateButton);
 
 let lastShownResultId = null;
-let pendingResult = null;
 
 function handleCompletedTask() {
     const queue = state.taskQueue;
+    // Refresh history panel when we see a new completed task
     for (const item of queue) {
         if (item.status === 'completed' && item.result && item.result.id !== lastShownResultId) {
-            // Don't interrupt user playback — show when current song ends
-            if (!audioPlayer.paused) {
-                pendingResult = item.result;
-                lastShownResultId = item.result.id;
-                return;
-            }
-            showCompletedResult(item.result);
+            lastShownResultId = item.result.id;
+            // Don't auto-play — just refresh history
+            loadRightHistory();
             break;
         }
     }
-}
-
-function showCompletedResult(result) {
-    lastShownResultId = result.id;
-    pendingResult = null;
-    showResult(result.prompt_enhanced, result.filename, result.enhanced);
-    hideStatus();
 }
 
 // --- Status display ---
@@ -250,19 +231,42 @@ function hideStatus() {
     statusSection.classList.add('hidden');
 }
 
-function hideResult() {
-    resultSection.classList.add('hidden');
-    audioPlayer.pause();
-}
-
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function showResult(promptEnhanced, filename, wasEnhanced) {
+function escapeAttr(str) {
+    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// --- History items cache for prev/next navigation ---
+let _historyItems = [];
+
+function setPromptTitle(enhanced) {
+    const title = document.getElementById('promptTitle');
+    if (title) title.textContent = enhanced ? '优化后提示词' : '提示词';
+}
+
+function openPlayer() {
     resultSection.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closePlayer() {
+    resultSection.classList.add('hidden');
+    audioPlayer.pause();
+}
+
+function showOriginalPrompt(text) {
+    setPromptTitle(false);
+    enhancedPrompt.innerHTML = '“' + escapeHtml(text) + '”';
+}
+
+function showResult(promptEnhanced, filename, wasEnhanced) {
+    openPlayer();
+    setPromptTitle(true);
 
     if (wasEnhanced && promptEnhanced) {
         enhancedPrompt.innerHTML = escapeHtml(promptEnhanced);
@@ -294,6 +298,63 @@ function showResult(promptEnhanced, filename, wasEnhanced) {
     resultSection.scrollIntoView({ behavior: 'smooth' });
 }
 
+// --- Progress bar dragging (also handles single click) ---
+let _isDragging = false;
+
+function seekFromEvent(e) {
+    const rect = progressTrack.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const dur = audioPlayer.duration;
+    if (!dur || isNaN(dur)) return;
+    audioPlayer.currentTime = pct * dur;
+    progressCurrent.style.width = `${pct * 100}%`;
+    progressThumb.style.left = `${pct * 100}%`;
+}
+
+progressTrack.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    _isDragging = true;
+    seekFromEvent(e);
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!_isDragging) return;
+    e.preventDefault();
+    seekFromEvent(e);
+});
+
+document.addEventListener('mouseup', () => {
+    _isDragging = false;
+    // Remove any text selection that might have started
+    window.getSelection().removeAllRanges();
+});
+
+// --- Prev / Next navigation ---
+function findCurrentIndex() {
+    const currentSrc = audioPlayer.src;
+    return _historyItems.findIndex(item => currentSrc.endsWith(item.filename));
+}
+
+prevBtn.addEventListener('click', () => {
+    const idx = findCurrentIndex();
+    if (idx > 0) {
+        const prev = _historyItems[idx - 1];
+        playFromHistory(prev.filename, prev.user_input);
+    }
+});
+
+nextBtn.addEventListener('click', () => {
+    const idx = findCurrentIndex();
+    if (idx >= 0 && idx < _historyItems.length - 1) {
+        const next = _historyItems[idx + 1];
+        playFromHistory(next.filename, next.user_input);
+    } else if (idx === -1 && _historyItems.length > 0) {
+        // Not playing from history, play the latest
+        const latest = _historyItems[0];
+        playFromHistory(latest.filename, latest.user_input);
+    }
+});
+
 // --- Audio player controls ---
 playBtn.addEventListener('click', () => {
     if (audioPlayer.paused) {
@@ -310,10 +371,6 @@ audioPlayer.addEventListener('ended', () => {
     progressCurrent.style.width = '0%';
     progressThumb.style.left = '0%';
     currentTime.textContent = '00:00';
-    // Auto-show pending result when current song finishes
-    if (pendingResult) {
-        showCompletedResult(pendingResult);
-    }
 });
 
 audioPlayer.addEventListener('timeupdate', () => {
@@ -325,15 +382,20 @@ audioPlayer.addEventListener('timeupdate', () => {
     }
 });
 
-progressTrack.addEventListener('click', (e) => {
-    if (!audioPlayer.duration) return;
-    const rect = progressTrack.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    audioPlayer.currentTime = pct * audioPlayer.duration;
-});
-
 volumeRange.addEventListener('input', () => {
     const val = parseInt(volumeRange.value);
+    audioPlayer.volume = val / 100;
+    volumeFill.style.width = `${val}%`;
+});
+
+// Click on volume fill area to set volume too
+const volSlider = document.querySelector('.volume-slider');
+volSlider.addEventListener('click', (e) => {
+    if (e.target === volumeRange) return;
+    const rect = volSlider.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const val = Math.round(pct * 100);
+    volumeRange.value = val;
     audioPlayer.volume = val / 100;
     volumeFill.style.width = `${val}%`;
 });
@@ -352,112 +414,145 @@ function formatDateForPlayer(date) {
     return `${y}-${m}-${d} 生成`;
 }
 
-// --- History ---
-historyToggleBtn.addEventListener('click', () => {
-    historyOverlay.classList.remove('hidden');
-    loadHistory();
-});
-historyCloseBtn.addEventListener('click', () => historyOverlay.classList.add('hidden'));
-historyOverlay.addEventListener('click', (e) => {
-    if (e.target === historyOverlay) historyOverlay.classList.add('hidden');
-});
-
-async function loadHistory() {
-    try {
-        const res = await fetch('/api/history');
-        const data = await res.json();
-        renderHistory(data.items || []);
-    } catch (err) {
-        historyList.innerHTML = '<p style="color:var(--text-muted);">加载失败</p>';
-    }
-}
-
-function renderHistory(items) {
-    if (items.length === 0) {
-        historyList.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px 0;">暂无生成记录</p>';
-        return;
-    }
-    historyList.innerHTML = items.map(item => `
-        <div class="history-item" data-id="${item.id}">
-            <div class="hi-date">${formatDate(item.created_at)}</div>
-            <div class="hi-prompt">"${escapeHtml(item.user_input)}"</div>
-            <div class="hi-actions">
-                <button onclick="playFromHistory('${escapeAttr(item.filename)}')">▶ 播放</button>
-                <a href="/output/${escapeAttr(item.filename)}" download>下载</a>
-                <button class="btn-delete" onclick="deleteHistory(${item.id}, '${escapeAttr(item.filename)}')">删除</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr.replace(' ', 'T') + 'Z');
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function escapeAttr(str) {
-    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
-
-function playFromHistory(filename) {
-    historyOverlay.classList.add('hidden');
+function playFromHistory(filename, userInput) {
+    openPlayer();
     audioPlayer.src = `/output/${filename}`;
     downloadLink.href = `/output/${filename}`;
     downloadLink.download = filename;
-    resultSection.classList.remove('hidden');
-    enhancedPrompt.innerHTML = '<span style="color:var(--text-muted);">（从历史记录加载）</span>';
+    showOriginalPrompt(userInput);
     playerMeta.textContent = '从历史记录加载';
     audioPlayer.load();
-    playBtn.textContent = '▶';
+    playBtn.textContent = '⏸';
     progressCurrent.style.width = '0%';
     currentTime.textContent = '00:00';
-    resultSection.scrollIntoView({ behavior: 'smooth' });
+    audioPlayer.play().catch(() => {});
 }
 
-async function deleteHistory(id, filename) {
-    if (!confirm('确定删除这条记录吗？')) return;
+// --- Right-panel history ---
+// Loaded on page load and after each delete
+async function loadRightHistory() {
+    try {
+        const res = await fetch('/api/history?limit=10');
+        const data = await res.json();
+        _historyItems = data.items || [];
+        renderRightHistory(_historyItems);
+    } catch (err) {
+        // silent — panel just stays empty
+    }
+}
+
+function renderRightHistory(items) {
+    const container = document.getElementById('rhList');
+    if (!container) return;
+    if (items.length === 0) {
+        container.innerHTML = '<div class="rh-empty">暂无历史记录</div>';
+        return;
+    }
+    container.innerHTML = items.map(item => `
+        <div class="rh-item" title="${escapeHtml(item.user_input)}" data-filename="${escapeAttr(item.filename)}" data-input="${escapeAttr(item.user_input)}" data-id="${item.id}">
+            <span class="rh-item-prompt">${escapeHtml(item.user_input)}</span>
+            <span class="rh-item-actions">
+                <button class="rh-play-btn" title="播放">▶</button>
+                <a href="/output/${escapeAttr(item.filename)}" download title="下载">↓</a>
+                <button class="rh-del" title="删除">✕</button>
+            </span>
+        </div>
+    `).join('');
+
+    // Click on the row (not actions) opens player without auto-play
+    container.querySelectorAll('.rh-item').forEach(el => {
+        el.addEventListener('click', (e) => {
+            if (e.target.closest('.rh-item-actions')) return;
+            const fname = el.dataset.filename;
+            const input = el.dataset.input;
+            openPlayer();
+            audioPlayer.src = `/output/${fname}`;
+            downloadLink.href = `/output/${fname}`;
+            downloadLink.download = fname;
+            showOriginalPrompt(input);
+            playerMeta.textContent = '从历史记录加载';
+            audioPlayer.load();
+            playBtn.textContent = '▶';
+            progressCurrent.style.width = '0%';
+            currentTime.textContent = '00:00';
+        });
+    });
+
+    // Play button directly plays
+    container.querySelectorAll('.rh-play-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const el = btn.closest('.rh-item');
+            playFromHistory(el.dataset.filename, el.dataset.input);
+        });
+    });
+
+    // Delete button
+    container.querySelectorAll('.rh-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const el = btn.closest('.rh-item');
+            const id = parseInt(el.dataset.id);
+            const filename = el.dataset.filename;
+            if (id) deleteRightHistory(id, filename);
+        });
+    });
+}
+
+async function deleteRightHistory(id, filename) {
     try {
         const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
         if (res.ok) {
             if (audioPlayer.src.includes(filename)) {
-                audioPlayer.pause();
-                resultSection.classList.add('hidden');
+                closePlayer();
             }
-            loadHistory();
+            loadRightHistory();
         }
     } catch (err) {
-        alert('删除失败');
+        // silent
     }
 }
 
-// --- Delete all with modal ---
-deleteAllBtn.addEventListener('click', () => {
-    confirmModal.classList.add('active');
+// --- Delete all (from right panel) ---
+const $modal = document.getElementById('confirmModal');
+const $modalConfirm = document.getElementById('modalConfirmBtn');
+const $modalCancel = document.getElementById('modalCancelBtn');
+
+document.getElementById('deleteAllBtn').addEventListener('click', () => {
+    $modal.classList.add('active');
 });
 
-modalCancelBtn.addEventListener('click', () => {
-    confirmModal.classList.remove('active');
+$modalCancel.addEventListener('click', () => {
+    $modal.classList.remove('active');
 });
 
-confirmModal.addEventListener('click', (e) => {
-    if (e.target === confirmModal) confirmModal.classList.remove('active');
+$modal.addEventListener('click', (e) => {
+    if (e.target === $modal) $modal.classList.remove('active');
 });
 
-modalConfirmBtn.addEventListener('click', async () => {
-    confirmModal.classList.remove('active');
+$modalConfirm.addEventListener('click', async () => {
+    $modal.classList.remove('active');
     try {
         const res = await fetch('/api/history', { method: 'DELETE' });
         if (res.ok) {
-            audioPlayer.pause();
-            resultSection.classList.add('hidden');
-            loadHistory();
+            closePlayer();
+            loadRightHistory();
         }
     } catch (err) {
-        alert('删除失败');
+        // silent
     }
 });
 
 // --- Init ---
 connectEventStream();
+loadRightHistory();
+
+// Click outside player to close (not when clicking history items)
+document.addEventListener('click', (e) => {
+    if (!resultSection.classList.contains('hidden') &&
+        !resultSection.contains(e.target) &&
+        e.target !== generateBtn &&
+        !e.target.closest('.rh-item')) {
+        closePlayer();
+    }
+});
