@@ -2,24 +2,26 @@
 /* Fonts loaded via <link> in HTML for non-blocking parallel fetch */
 
 :root {
-  --bg-primary: #0d0c0a;
-  --bg-secondary: #1a1816;
-  --bg-input: #12100e;
-  --text-primary: #e8e6e3;
-  --text-secondary: #9a9080;
-  --text-muted: #5a5548;
-  --gold: #c9a84c;
-  --gold-dim: #8b7433;
-  --gold-bright: #e0c876;
-  --gold-glow: rgba(201, 168, 76, 0.15);
-  --border: #2a2520;
-  --border-light: #3a3025;
-  --danger: #8b4a4a;
-  --danger-border: #3a2020;
+  --bg-primary: #1A120D;
+  --bg-secondary: #1F1712;
+  --bg-input: #15100C;
+  --text-primary: #F5E6D3;
+  --text-secondary: #C4B08A;
+  --text-muted: #8A7A62;
+  --gold: #D4AF37;
+  --gold-dim: #9E8030;
+  --gold-bright: #E8D088;
+  --gold-glow: rgba(212, 175, 55, 0.18);
+  --burgundy: #8B3A3A;
+  --burgundy-dark: #5A1E1E;
+  --border: #3A2E22;
+  --border-light: #4A3C30;
+  --danger: #B84545;
+  --danger-border: #5A2525;
   --radius: 6px;
   --transition: 0.2s ease;
-  --font-display: 'ZCOOL QingKe HuangYou', cursive;
-  --font-body: 'Noto Serif SC', serif;
+  --font-display: 'Playfair Display', 'Noto Serif SC', serif;
+  --font-body: 'Cormorant Garamond', 'Noto Serif SC', serif;
   --font-mono: monospace;
 }
 
@@ -31,10 +33,10 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   background:
-    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(80,50,50,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 60% at 85% 80%, rgba(100,55,35,0.10) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 40% at 50% 40%, rgba(40,22,22,0.15) 0%, transparent 75%),
-    linear-gradient(175deg, #12100d 0%, #15110e 30%, #0f0d0a 60%, #110e0b 100%);
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(120,55,55,0.20) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 80%, rgba(139,58,58,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 40%, rgba(80,40,20,0.15) 0%, transparent 75%),
+    linear-gradient(175deg, #1A120D 0%, #1F1610 30%, #16100C 60%, #1A120D 100%);
   background-attachment: fixed;
 }
 
@@ -170,7 +172,7 @@ input[type=range]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
-  border: 2px solid #5a4a20;
+  border: 2px solid #6B4F28;
   box-shadow: 0 0 8px var(--gold-glow);
   cursor: pointer;
   margin-top: -7px;
@@ -186,7 +188,7 @@ input[type=range]::-moz-range-thumb {
   height: 18px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
-  border: 2px solid #5a4a20;
+  border: 2px solid #6B4F28;
   box-shadow: 0 0 8px var(--gold-glow);
   cursor: pointer;
 }
@@ -244,7 +246,7 @@ input[type=range]::-moz-range-thumb {
   margin-top: 20px;
   padding: 12px;
   background: linear-gradient(135deg, var(--gold-dim), var(--gold), #b8943a);
-  color: #12100e;
+  color: #15100C;
   border: none;
   border-radius: var(--radius);
   font-family: var(--font-body);
@@ -354,7 +356,7 @@ input[type=range]::-moz-range-thumb {
 }
 
 .prompt-header .ornament {
-  color: #5a4a20;
+  color: #6B4F28;
   font-size: 1rem;
 }
 
@@ -428,7 +430,7 @@ input[type=range]::-moz-range-thumb {
   height: 48px;
   border-radius: 50%;
   background: radial-gradient(circle, #2a2520 30%, #1a1a1a 70%, var(--border-light) 100%);
-  border: 2px solid #5a4a20;
+  border: 2px solid #6B4F28;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,7 +495,7 @@ audio {
   height: 12px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
-  border: 2px solid #5a4a20;
+  border: 2px solid #6B4F28;
   box-shadow: 0 0 6px var(--gold-glow);
   display: none;
 }
@@ -536,7 +538,7 @@ audio {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--gold-dim), var(--gold));
   border: none;
-  color: #12100e;
+  color: #15100C;
   font-size: 1.2rem;
   cursor: pointer;
   display: flex;
@@ -641,7 +643,7 @@ audio {
 }
 
 .modal-ornament {
-  color: #5a4a20;
+  color: #6B4F28;
   font-size: 1.5rem;
   margin-bottom: 8px;
 }
@@ -805,7 +807,7 @@ audio {
 .param-slider::-webkit-slider-thumb {
   -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
-  border:1.5px solid #5a4a20; box-shadow:0 0 8px var(--gold-glow);
+  border:1.5px solid #6B4F28; box-shadow:0 0 8px var(--gold-glow);
   cursor:pointer; margin-top:-6px;
   transition: box-shadow 0.2s, transform 0.2s;
 }
@@ -816,7 +818,7 @@ audio {
 .param-slider::-moz-range-thumb  {
   width:14px; height:14px; border-radius:50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
-  border:1.5px solid #5a4a20; box-shadow:0 0 8px var(--gold-glow); cursor:pointer;
+  border:1.5px solid #6B4F28; box-shadow:0 0 8px var(--gold-glow); cursor:pointer;
 }
 
 /* presets */
