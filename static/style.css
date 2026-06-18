@@ -959,7 +959,7 @@ audio {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 280px;
+  max-height: 180px;
   overflow-x: hidden;
   overflow-y: auto;
   min-width: 0;
