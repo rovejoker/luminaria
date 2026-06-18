@@ -199,6 +199,7 @@ function renderQueuePanel() {
     const queue = state.taskQueue;
     if (!queue || queue.length === 0) {
         container.innerHTML = '<div class="queue-empty">暂无排队任务</div>';
+        container.classList.remove('scroll-hint');
         return;
     }
 
@@ -229,22 +230,22 @@ function renderQueuePanel() {
                 ` : ''}
                 <div class="qi-footer">
                     <span class="qi-message">${isActive ? escapeHtml(item.message) : ''}</span>
-                    ${canCancel ? `<button class="qi-cancel-btn" onclick="cancelTask('${item.task_id}')">取消</button>` : ''}
+                    ${canCancel ? `<button class="qi-cancel-btn" data-task-id="${item.task_id}">取消</button>` : ''}
                 </div>
             </div>
         `;
     }).join('');
-}
 
-async function cancelTask(taskId) {
-    try {
-        const res = await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
-        if (!res.ok) {
-            console.error('Cancel failed');
+    // Auto-set max-height for exactly 2 items + auto-scroll to keep cancel btn visible
+    requestAnimationFrame(() => {
+        const items = container.querySelectorAll(':scope > .queue-item');
+        container.scrollTop = container.scrollHeight;
+        if (items.length > 2) {
+            container.classList.add('scroll-hint');
+        } else {
+            container.classList.remove('scroll-hint');
         }
-    } catch (err) {
-        console.error('Cancel error:', err);
-    }
+    });
 }
 
 function updateGenerateButton() {
@@ -613,9 +614,28 @@ $modalConfirm.addEventListener('click', async () => {
     }
 });
 
+// --- Cancel via event delegation ---
+function setupCancelDelegation() {
+    const container = document.getElementById('queueList');
+    if (!container) return;
+    container.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.qi-cancel-btn');
+        if (!btn) return;
+        const taskId = btn.dataset.taskId;
+        if (!taskId) return;
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
+            if (!res.ok) console.error('Cancel failed');
+        } catch (err) {
+            console.error('Cancel error:', err);
+        }
+    });
+}
+
 // --- Init ---
 connectEventStream();
 loadRightHistory();
+setupCancelDelegation();
 
 // Click outside player to close (not when clicking history items)
 document.addEventListener('click', (e) => {
