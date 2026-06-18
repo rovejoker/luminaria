@@ -86,6 +86,7 @@ class TaskQueue:
         self._pending: list[QueuedTask] = []
         self._tasks: dict[str, QueuedTask] = {}
         self._active: QueuedTask | None = None
+        self._recently_done: list[QueuedTask] = []
         self._queue_event = asyncio.Event()
         self._worker: asyncio.Task | None = None
 
@@ -122,7 +123,7 @@ class TaskQueue:
         return True
 
     def get_snapshot(self) -> list[dict]:
-        """Return ordered list: active (position=0), then queued (1+)."""
+        """Return ordered list: active (position=0), then queued (1+), then recently done."""
         items: list[dict] = []
         if self._active and self._active.status not in (
             TaskStatus.COMPLETED, TaskStatus.CANCELLED, TaskStatus.FAILED
@@ -130,6 +131,9 @@ class TaskQueue:
             items.append(self._active.to_dict(0))
         for i, t in enumerate(self._pending, start=1):
             items.append(t.to_dict(i))
+        # Include recently-done items at the end (shown as archived in UI)
+        for t in self._recently_done:
+            items.append(t.to_dict(-1))
         return items
 
     async def _broadcast(self):
@@ -150,7 +154,9 @@ class TaskQueue:
                 logger.exception(f"Task {task.task_id} worker error")
                 task.status = TaskStatus.FAILED
                 task.error = f"内部错误: {e}"
+                self._recently_done.append(task)
                 await self._broadcast()
+                asyncio.create_task(self._cleanup_done(task))
             self._active = None
             if self._pending:
                 self._queue_event.set()
@@ -195,12 +201,16 @@ class TaskQueue:
         except asyncio.TimeoutError:
             task.status = TaskStatus.FAILED
             task.error = f"生成超时（{GENERATION_TIMEOUT_SECONDS}s）"
+            self._recently_done.append(task)
             await self._broadcast()
+            asyncio.create_task(self._cleanup_done(task))
             return
         except RuntimeError as e:
             task.status = TaskStatus.FAILED
             task.error = str(e)
+            self._recently_done.append(task)
             await self._broadcast()
+            asyncio.create_task(self._cleanup_done(task))
             return
 
         if task.cancel_event.is_set():
@@ -226,7 +236,9 @@ class TaskQueue:
         except RuntimeError as e:
             task.status = TaskStatus.FAILED
             task.error = str(e)
+            self._recently_done.append(task)
             await self._broadcast()
+            asyncio.create_task(self._cleanup_done(task))
             return
 
         if task.cancel_event.is_set():
@@ -258,10 +270,23 @@ class TaskQueue:
             "enhanced": was_enhanced,
             "created_at": task.created_at,
         }
+        self._recently_done.append(task)
         await self._broadcast()
+        asyncio.create_task(self._cleanup_done(task))
 
     async def _finalize_cancelled(self, task: QueuedTask):
         task.status = TaskStatus.CANCELLED
         task.message = "已取消"
         task.progress = 0
+        self._recently_done.append(task)
+        await self._broadcast()
+        asyncio.create_task(self._cleanup_done(task))
+
+    async def _cleanup_done(self, task: QueuedTask):
+        """Remove from recently_done after 5 seconds."""
+        await asyncio.sleep(5)
+        if task in self._recently_done:
+            self._recently_done.remove(task)
+        if task.task_id in self._tasks:
+            del self._tasks[task.task_id]
         await self._broadcast()
