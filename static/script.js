@@ -1,10 +1,12 @@
-// LuminAria — Victorian classical client-side logic
+// LuminAria — Victorian classical client-side logic with task queue support
 
 const state = {
     duration: 90,
     generating: false,
     audioFilename: null,
     promptExpanded: false,
+    taskQueue: [],
+    eventSource: null,
 };
 
 // --- DOM refs ---
@@ -73,20 +75,10 @@ promptHeader.addEventListener('click', () => {
     promptArrow.classList.toggle('expanded', state.promptExpanded);
 });
 
-// --- Generate ---
+// --- Generate / Add to queue ---
 generateBtn.addEventListener('click', async () => {
     const userInput = promptInput.value.trim();
-    if (!userInput) {
-        promptInput.focus();
-        return;
-    }
-    if (state.generating) return;
-
-    state.generating = true;
-    generateBtn.disabled = true;
-    generateBtn.textContent = '⏳ 准备中...';
-    hideResult();
-    showStatus('准备中...', 0);
+    if (!userInput || state.generating) return;
 
     try {
         const response = await fetch('/api/generate', {
@@ -96,86 +88,148 @@ generateBtn.addEventListener('click', async () => {
         });
 
         if (response.status === 429) {
-            showStatus('系统忙碌中，请稍后重试...', 0);
-            resetGenerateBtn();
+            const err = await response.json();
+            showStatus(err.detail || '队列已满', 0);
             return;
         }
         if (!response.ok) {
-            const err = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            const err = await response.json().catch(() => ({ detail: '请求失败' }));
             showStatus(`错误: ${err.detail}`, 0);
-            resetGenerateBtn();
             return;
         }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let lastEvent = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-                if (line.startsWith('event: ')) {
-                    lastEvent = line.slice(7).trim();
-                    continue;
-                }
-                if (line.startsWith('data: ')) {
-                    const dataStr = line.slice(6);
-                    try {
-                        const data = JSON.parse(dataStr);
-                        handleSSEEvent(data, lastEvent);
-                    } catch {
-                        // incomplete JSON, will retry
-                    }
-                    lastEvent = '';
-                }
-            }
-        }
+        // Auto-clear input on success
+        promptInput.value = '';
     } catch (err) {
         showStatus(`网络错误: ${err.message}`, 0);
     }
-    if (state.generating) {
-        resetGenerateBtn();
+});
+
+// --- Global SSE connection ---
+function connectEventStream() {
+    if (state.eventSource) {
+        state.eventSource.close();
+    }
+
+    const es = new EventSource('/api/events');
+    state.eventSource = es;
+
+    es.addEventListener('queue_update', (e) => {
+        try {
+            const data = JSON.parse(e.data);
+            state.taskQueue = data.queue || [];
+            renderQueuePanel();
+            updateGenerateButton();
+            handleCompletedTask();
+        } catch (err) {
+            console.error('SSE parse error:', err);
+        }
+    });
+
+    es.onerror = () => {
+        es.close();
+        state.eventSource = null;
+        setTimeout(connectEventStream, 3000);
+    };
+}
+
+// --- Queue panel ---
+function renderQueuePanel() {
+    const container = document.getElementById('queueList');
+    if (!container) return;
+
+    const queue = state.taskQueue;
+    if (!queue || queue.length === 0) {
+        container.innerHTML = '<div class="queue-empty">暂无排队任务</div>';
+        return;
+    }
+
+    container.innerHTML = queue.map((item, idx) => {
+        const isActive = idx === 0;
+        const statusLabels = {
+            queued: '排队中',
+            enhancing: '优化提示词',
+            generating: '生成中',
+            converting: '转换中',
+            completed: '已完成',
+            failed: '失败',
+            cancelled: '已取消',
+        };
+        const label = statusLabels[item.status] || item.status;
+        const canCancel = ['queued', 'enhancing', 'generating', 'converting'].includes(item.status);
+
+        return `
+            <div class="queue-item ${isActive ? 'active' : ''} ${['cancelled', 'failed'].includes(item.status) ? 'cancelled' : ''} ${item.status === 'completed' ? 'completed' : ''}">
+                <div class="qi-header">
+                    <span class="qi-prompt" title="${escapeHtml(item.user_input)}">${escapeHtml(item.user_input)}</span>
+                    <span class="qi-status-badge ${item.status}">${label}</span>
+                </div>
+                ${['generating', 'enhancing', 'converting'].includes(item.status) ? `
+                    <div class="qi-progress">
+                        <div class="qi-progress-fill" style="width:${item.progress}%"></div>
+                    </div>
+                ` : ''}
+                <div class="qi-footer">
+                    <span class="qi-message">${isActive ? escapeHtml(item.message) : ''}</span>
+                    ${canCancel ? `<button class="qi-cancel-btn" onclick="cancelTask('${item.task_id}')">取消</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function cancelTask(taskId) {
+    try {
+        const res = await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
+        if (!res.ok) {
+            console.error('Cancel failed');
+        }
+    } catch (err) {
+        console.error('Cancel error:', err);
+    }
+}
+
+function updateGenerateButton() {
+    const queue = state.taskQueue;
+    const hasActive = queue.length > 0 && !['completed', 'cancelled', 'failed'].includes(queue[0]?.status);
+
+    if (hasActive) {
+        state.generating = true;
+        generateBtn.disabled = true;
+        generateBtn.textContent = '🎵 生成音乐中...';
+        const active = queue[0];
+        showStatus(active.message, active.progress);
+    } else {
+        state.generating = false;
+        generateBtn.disabled = !promptInput.value.trim();
+        generateBtn.textContent = '生成音乐';
+        hideStatus();
+    }
+}
+
+// Also update generate button when input changes
+promptInput.addEventListener('input', () => {
+    if (!state.generating) {
+        generateBtn.disabled = !promptInput.value.trim();
     }
 });
 
-function handleSSEEvent(data) {
-    // Complete event — no stage field
-    if (data.stage === undefined) {
-        hideStatus();
-        state.generating = false;
-        generateBtn.disabled = false;
-        generateBtn.textContent = '生成音乐';
-        showResult(data.prompt_enhanced, data.filename, data.enhanced);
-        return;
+function handleCompletedTask() {
+    const queue = state.taskQueue;
+    for (const item of queue) {
+        if (item.status === 'completed' && item.result) {
+            showResult(
+                item.result.prompt_enhanced,
+                item.result.filename,
+                item.result.enhanced
+            );
+            hideStatus();
+            break;
+        }
     }
-
-    if (data.stage === 'error') {
-        showStatus(`错误: ${data.message}`, 0);
-        progressFill.style.background = '#8b4a4a';
-        state.generating = false;
-        generateBtn.disabled = false;
-        generateBtn.textContent = '生成音乐';
-        return;
-    }
-
-    const stageMessages = {
-        enhancing: { msg: '正在优化提示词...', btn: '⏳ 优化提示词中...', pct: 10 },
-        generating: { msg: '正在生成音乐，预计需要 30-60 秒...', btn: '🎵 生成音乐中...', pct: 40 },
-        converting: { msg: '正在转换音频格式...', btn: '🔄 转换格式中...', pct: 80 },
-    };
-
-    const s = stageMessages[data.stage] || { msg: data.message, btn: '⏳ 处理中...', pct: 50 };
-    showStatus(data.message || s.msg, s.pct);
-    generateBtn.textContent = s.btn;
 }
 
+// --- Status display ---
 function showStatus(msg, progressPercent) {
     statusSection.classList.remove('hidden');
     statusMessage.textContent = msg;
@@ -191,13 +245,6 @@ function hideResult() {
     audioPlayer.pause();
 }
 
-function resetGenerateBtn() {
-    state.generating = false;
-    generateBtn.disabled = false;
-    generateBtn.textContent = '生成音乐';
-    hideStatus();
-}
-
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -209,7 +256,6 @@ function showResult(promptEnhanced, filename, wasEnhanced) {
 
     if (wasEnhanced && promptEnhanced) {
         enhancedPrompt.innerHTML = escapeHtml(promptEnhanced);
-        // Reset prompt to collapsed by default
         if (state.promptExpanded) {
             promptBody.classList.remove('expanded');
             promptArrow.classList.add('collapsed');
@@ -265,7 +311,6 @@ audioPlayer.addEventListener('timeupdate', () => {
     }
 });
 
-// Click on progress track to seek
 progressTrack.addEventListener('click', (e) => {
     if (!audioPlayer.duration) return;
     const rect = progressTrack.getBoundingClientRect();
@@ -273,7 +318,6 @@ progressTrack.addEventListener('click', (e) => {
     audioPlayer.currentTime = pct * audioPlayer.duration;
 });
 
-// Volume
 volumeRange.addEventListener('input', () => {
     const val = parseInt(volumeRange.value);
     audioPlayer.volume = val / 100;
@@ -400,3 +444,6 @@ modalConfirmBtn.addEventListener('click', async () => {
         alert('删除失败');
     }
 });
+
+// --- Init ---
+connectEventStream();
