@@ -1,6 +1,8 @@
 """Pydantic models for request/response validation."""
+import enum
 from datetime import datetime
 from pydantic import BaseModel, Field
+
 
 
 class GenerateRequest(BaseModel):
@@ -39,3 +41,28 @@ class ErrorResponse(BaseModel):
     """Standard error response."""
     detail: str
     error_code: str | None = None
+
+
+class TaskStatus(str, enum.Enum):
+    """Task status enum."""
+    QUEUED = "queued"
+    ENHANCING = "enhancing"
+    GENERATING = "generating"
+    CONVERTING = "converting"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class TaskInfo(BaseModel):
+    """Task in the generation queue."""
+    task_id: str
+    status: TaskStatus
+    user_input: str
+    duration: int
+    progress: int = 0
+    message: str = ""
+    position: int = 0
+    created_at: str = ""
+    result: GenerateResponse | None = None
+    error: str | None = None
