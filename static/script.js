@@ -78,7 +78,7 @@ promptHeader.addEventListener('click', () => {
 // --- Generate / Add to queue ---
 generateBtn.addEventListener('click', async () => {
     const userInput = promptInput.value.trim();
-    if (!userInput || state.generating) return;
+    if (!userInput) return;
 
     try {
         const response = await fetch('/api/generate', {
@@ -191,33 +191,35 @@ async function cancelTask(taskId) {
 
 function updateGenerateButton() {
     const queue = state.taskQueue;
-    const hasActive = queue.length > 0 && !['completed', 'cancelled', 'failed'].includes(queue[0]?.status);
+    const hasActiveTask = queue.length > 0 && !['completed', 'cancelled', 'failed'].includes(queue[0]?.status);
+    const hasAnyLive = queue.some(t => !['completed', 'cancelled', 'failed'].includes(t.status));
 
-    if (hasActive) {
-        state.generating = true;
-        generateBtn.disabled = true;
-        generateBtn.textContent = '🎵 生成音乐中...';
+    state.generating = hasActiveTask;
+
+    if (hasActiveTask) {
+        generateBtn.textContent = '添加任务';
         const active = queue[0];
         showStatus(active.message, active.progress);
+    } else if (hasAnyLive) {
+        generateBtn.textContent = '添加任务';
+        hideStatus();
     } else {
-        state.generating = false;
-        generateBtn.disabled = !promptInput.value.trim();
         generateBtn.textContent = '生成音乐';
         hideStatus();
     }
+    generateBtn.disabled = !promptInput.value.trim();
 }
 
-// Also update generate button when input changes
-promptInput.addEventListener('input', () => {
-    if (!state.generating) {
-        generateBtn.disabled = !promptInput.value.trim();
-    }
-});
+// Update button when input changes
+promptInput.addEventListener('input', updateGenerateButton);
+
+let lastShownResultId = null;
 
 function handleCompletedTask() {
     const queue = state.taskQueue;
     for (const item of queue) {
-        if (item.status === 'completed' && item.result) {
+        if (item.status === 'completed' && item.result && item.result.id !== lastShownResultId) {
+            lastShownResultId = item.result.id;
             showResult(
                 item.result.prompt_enhanced,
                 item.result.filename,
