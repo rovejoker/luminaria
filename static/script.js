@@ -220,6 +220,8 @@ function handleCompletedTask() {
     for (const item of queue) {
         if (item.status === 'completed' && item.result && item.result.id !== lastShownResultId) {
             lastShownResultId = item.result.id;
+            // Don't interrupt the user if they're currently playing audio
+            if (!audioPlayer.paused) break;
             showResult(
                 item.result.prompt_enhanced,
                 item.result.filename,
