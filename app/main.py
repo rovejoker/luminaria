@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
-from app.config import OUTPUT_DIR, BASE_DIR
+from app.config import OUTPUT_DIR, BASE_DIR, PORT, HOST
 from app.models import GenerateRequest, GenerateResponse, HistoryItem, HistoryList
 from app.database import init_db, insert_generation, get_history, get_generation, delete_generation, delete_all_generations
 from app.prompt_enhancer import enhance_prompt
