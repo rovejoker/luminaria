@@ -390,9 +390,13 @@ document.addEventListener('mousemove', (e) => {
 });
 
 document.addEventListener('mouseup', () => {
+    const wasDragging = _isDragging;
     _isDragging = false;
-    // Remove any text selection that might have started
-    window.getSelection().removeAllRanges();
+    // Only clear text selection when we were actually dragging the progress bar,
+    // otherwise we destroy the active textarea/input cursor.
+    if (wasDragging) {
+        window.getSelection().removeAllRanges();
+    }
 });
 
 // --- Prev / Next navigation ---
