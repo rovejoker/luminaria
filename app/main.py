@@ -1,4 +1,4 @@
-"""FastAPI application — routes, SSE streaming, concurrency control."""
+"""FastAPI application — routes, SSE streaming, task queue."""
 import asyncio
 import json
 import logging
@@ -11,11 +11,11 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sse_starlette.sse import EventSourceResponse
 
-from app.config import OUTPUT_DIR, BASE_DIR, GENERATION_TIMEOUT_SECONDS, PORT, HOST
+from app.config import OUTPUT_DIR, BASE_DIR
 from app.models import GenerateRequest, GenerateResponse, HistoryItem, HistoryList
 from app.database import init_db, insert_generation, get_history, get_generation, delete_generation, delete_all_generations
 from app.prompt_enhancer import enhance_prompt
-from app.generator import generate_audio, wav_to_mp3
+from app.queue import TaskQueue, SSEBroadcaster
 
 import torch
 
@@ -23,17 +23,21 @@ import torch
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("luminaria")
 
-# --- Concurrency lock: only one generation at a time ---
-_gen_lock = asyncio.Lock()
+# --- Task queue with SSE broadcast ---
+_broadcaster = SSEBroadcaster()
+_task_queue = TaskQueue(_broadcaster)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: init DB, create directories."""
+    """Startup: init DB, start task queue worker."""
     init_db()
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    await _task_queue.start()
     logger.info("LuminAria server started")
     yield
+    await _task_queue.stop()
+    logger.info("LuminAria server stopped")
 
 
 app = FastAPI(title="LuminAria", version="1.0.0", lifespan=lifespan)
@@ -69,72 +73,55 @@ async def health():
     }
 
 
-# --- Generate endpoint with SSE ---
+# --- Generate endpoint — enqueue task, return immediately ---
 @app.post("/api/generate")
 async def generate(request: GenerateRequest):
-    """Submit a music generation request. Returns SSE stream with progress."""
-    if _gen_lock.locked():
-        raise HTTPException(status_code=429, detail="Another generation is in progress. Please wait.")
+    """Submit a generation request. Returns task_id immediately."""
+    try:
+        task_id = await _task_queue.enqueue(request.user_input, request.duration)
+        return {"task_id": task_id, "status": "queued"}
+    except RuntimeError as e:
+        raise HTTPException(status_code=429, detail=str(e))
 
-    async def event_stream():
-        async with _gen_lock:
-            async def push(stage: str, message: str):
-                return {"event": "status", "data": f'{{"stage":"{stage}","message":"{message}"}}'}
 
-            # Stage 1: Enhance prompt
-            yield await push("enhancing", "正在优化提示词...")
-            enhanced_prompt, was_enhanced = await enhance_prompt(request.user_input)
+# --- SSE events stream for queue updates ---
+@app.get("/api/events")
+async def event_stream(request: Request):
+    """Global SSE stream — broadcasts queue state to all clients."""
+    queue = _broadcaster.subscribe()
 
-            # Stage 2: Generate audio
-            yield await push("generating", "正在生成音乐，预计需要 30-60 秒..." +
-                             ("（注意：运行在 CPU 上，可能需要 30-60 分钟）" if not torch.cuda.is_available() else ""))
+    async def generate():
+        try:
+            # Send initial snapshot immediately
+            snapshot = _task_queue.get_snapshot()
+            yield {"event": "queue_update", "data": json.dumps({"queue": snapshot}, ensure_ascii=False)}
 
-            try:
-                wav_path, actual_duration = await asyncio.wait_for(
-                    asyncio.to_thread(generate_audio, enhanced_prompt, request.duration),
-                    timeout=GENERATION_TIMEOUT_SECONDS,
-                )
-            except asyncio.TimeoutError:
-                error_data = json.dumps({"stage": "error", "message": f"生成超时（{GENERATION_TIMEOUT_SECONDS}s），模型可能运行在 CPU 上"})
-                yield {"event": "error", "data": error_data}
-                return
-            except RuntimeError as e:
-                error_data = json.dumps({"stage": "error", "message": str(e)})
-                yield {"event": "error", "data": error_data}
-                return
+            while True:
+                event = await queue.get()
+                yield event
+        except asyncio.CancelledError:
+            pass
+        finally:
+            _broadcaster.unsubscribe(queue)
 
-            # Stage 3: Convert to MP3
-            yield await push("converting", "正在转换音频格式...")
-            try:
-                mp3_path = await asyncio.to_thread(wav_to_mp3, wav_path)
-            except RuntimeError as e:
-                error_data = json.dumps({"stage": "error", "message": str(e)})
-                yield {"event": "error", "data": error_data}
-                return
+    return EventSourceResponse(generate(), ping=15)
 
-            # Stage 4: Save to DB
-            filename = os.path.basename(mp3_path)
-            row_id = insert_generation(
-                user_input=request.user_input,
-                prompt_enhanced=enhanced_prompt if was_enhanced else None,
-                duration=request.duration,
-                filename=filename,
-                enhanced=was_enhanced,
-            )
 
-            # Stage 5: Complete
-            complete_data = json.dumps({
-                "id": row_id,
-                "user_input": request.user_input,
-                "prompt_enhanced": enhanced_prompt if was_enhanced else None,
-                "duration": request.duration,
-                "filename": filename,
-                "enhanced": was_enhanced,
-                "created_at": "",  # filled by DB
-            })
-            yield {"event": "complete", "data": complete_data}
+# --- Cancel a task ---
+@app.post("/api/tasks/{task_id}/cancel")
+async def cancel_task(task_id: str):
+    """Cancel a queued or in-progress task."""
+    ok = await _task_queue.cancel(task_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Task not found or already finished")
+    return {"detail": "Cancelled"}
 
-    return EventSourceResponse(event_stream(), ping=15)
+
+# --- Get queue snapshot ---
+@app.get("/api/tasks")
+async def list_tasks():
+    """Return current queue snapshot."""
+    return {"queue": _task_queue.get_snapshot()}
 
 
 # --- History endpoints ---
