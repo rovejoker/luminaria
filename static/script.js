@@ -214,23 +214,29 @@ function updateGenerateButton() {
 promptInput.addEventListener('input', updateGenerateButton);
 
 let lastShownResultId = null;
+let pendingResult = null;
 
 function handleCompletedTask() {
     const queue = state.taskQueue;
     for (const item of queue) {
         if (item.status === 'completed' && item.result && item.result.id !== lastShownResultId) {
-            lastShownResultId = item.result.id;
-            // Don't interrupt the user if they're currently playing audio
-            if (!audioPlayer.paused) break;
-            showResult(
-                item.result.prompt_enhanced,
-                item.result.filename,
-                item.result.enhanced
-            );
-            hideStatus();
+            // Don't interrupt user playback — show when current song ends
+            if (!audioPlayer.paused) {
+                pendingResult = item.result;
+                lastShownResultId = item.result.id;
+                return;
+            }
+            showCompletedResult(item.result);
             break;
         }
     }
+}
+
+function showCompletedResult(result) {
+    lastShownResultId = result.id;
+    pendingResult = null;
+    showResult(result.prompt_enhanced, result.filename, result.enhanced);
+    hideStatus();
 }
 
 // --- Status display ---
@@ -304,6 +310,10 @@ audioPlayer.addEventListener('ended', () => {
     progressCurrent.style.width = '0%';
     progressThumb.style.left = '0%';
     currentTime.textContent = '00:00';
+    // Auto-show pending result when current song finishes
+    if (pendingResult) {
+        showCompletedResult(pendingResult);
+    }
 });
 
 audioPlayer.addEventListener('timeupdate', () => {
