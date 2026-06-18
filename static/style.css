@@ -748,8 +748,8 @@ audio {
 }
 
 .left-panel {
-  /* reserved for future advanced settings */
   min-height: 200px;
+  min-width: 0;
 }
 
 /* ── Advanced Parameters Card (left panel) ── */
@@ -908,12 +908,14 @@ audio {
 
 .center-panel {
   min-width: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .right-panel {
   min-height: 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
@@ -929,6 +931,7 @@ audio {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
 }
 
 .queue-panel .queue-title {
@@ -957,7 +960,9 @@ audio {
   flex-direction: column;
   gap: 10px;
   max-height: 280px;
+  overflow-x: hidden;
   overflow-y: auto;
+  min-width: 0;
 }
 
 .rh-list {
@@ -965,8 +970,10 @@ audio {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   min-height: 0;
+  min-width: 0;
 }
 
 .rh-divider {
@@ -1010,6 +1017,8 @@ audio {
   border-radius: 4px;
   cursor: pointer;
   transition: var(--transition);
+  min-width: 0;
+  overflow: hidden;
 }
 .rh-item:hover {
   border-color: var(--gold-dim);
@@ -1017,6 +1026,7 @@ audio {
 
 .rh-item-prompt {
   flex: 1;
+  min-width: 0;
   font-size: 0.72rem;
   color: var(--text-secondary);
   overflow: hidden;
@@ -1064,6 +1074,8 @@ audio {
   border-radius: var(--radius);
   padding: 12px;
   transition: var(--transition);
+  min-width: 0;
+  overflow: hidden;
 }
 .queue-item.active {
   border-color: var(--gold);
@@ -1083,6 +1095,7 @@ audio {
   align-items: flex-start;
   margin-bottom: 6px;
   gap: 8px;
+  min-width: 0;
 }
 
 .qi-status-badge {
@@ -1127,6 +1140,7 @@ audio {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+  min-width: 0;
 }
 
 .qi-progress {
