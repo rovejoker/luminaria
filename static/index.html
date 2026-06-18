@@ -17,104 +17,118 @@
             <button id="historyToggleBtn" class="btn-ghost">历史记录</button>
         </header>
 
-        <!-- Main content -->
+        <!-- Three-column layout -->
         <main class="main-content">
-            <!-- Input section -->
-            <section class="input-section">
-                <label for="promptInput" class="input-label">描述你想要的音乐...</label>
-                <textarea id="promptInput" class="prompt-input" rows="3"
-                    placeholder="例如：轻柔的钢琴曲，像下雨天的咖啡馆"></textarea>
+            <!-- Left: reserved for future advanced settings -->
+            <aside class="left-panel"></aside>
 
-                <div class="duration-group">
-                    <div class="duration-row">
-                        <span class="duration-label">时 长</span>
-                        <input type="range" id="durationSlider" min="15" max="120" step="5" value="90">
-                        <span id="durationValue" class="duration-value">90秒</span>
-                    </div>
-                    <div class="duration-ticks">
-                        <span>15秒</span>
-                        <span>30秒</span>
-                        <span>60秒</span>
-                        <span>90秒</span>
-                        <span>120秒</span>
-                    </div>
-                    <div class="duration-options" id="durationOptions">
-                        <button class="dur-btn" data-duration="30">30秒</button>
-                        <button class="dur-btn" data-duration="60">60秒</button>
-                        <button class="dur-btn active" data-duration="90">90秒</button>
-                        <button class="dur-btn" data-duration="120">120秒</button>
-                    </div>
-                </div>
+            <!-- Center: input + status + result -->
+            <section class="center-panel">
+                <!-- Input section -->
+                <section class="input-section">
+                    <label for="promptInput" class="input-label">描述你想要的音乐...</label>
+                    <textarea id="promptInput" class="prompt-input" rows="3"
+                        placeholder="例如：轻柔的钢琴曲，像下雨天的咖啡馆"></textarea>
 
-                <button id="generateBtn" class="btn-generate">生成音乐</button>
-            </section>
-
-            <!-- Status area -->
-            <section id="statusSection" class="status-section hidden">
-                <div id="statusMessage" class="status-message"></div>
-                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-            </section>
-
-            <!-- Result section -->
-            <section id="resultSection" class="result-section hidden">
-                <!-- Collapsible prompt -->
-                <div class="collapsible-prompt">
-                    <div id="promptHeader" class="prompt-header">
-                        <span class="ornament">⚜️</span>
-                        <span class="title">优化后提示词</span>
-                        <span id="promptArrow" class="arrow collapsed">❮</span>
-                    </div>
-                    <div id="promptBody" class="prompt-body">
-                        <div id="enhancedPrompt" class="enhanced-prompt-text"></div>
-                    </div>
-                </div>
-
-                <!-- Record player -->
-                <div class="record-player">
-                    <div class="player-card">
-                        <div class="player-top">
-                            <div class="vinyl-disc">
-                                <div class="vinyl-label"></div>
-                            </div>
-                            <div class="player-meta">
-                                <div class="now-playing">正在播放</div>
-                                <div class="meta-sub" id="playerMeta">选择音乐开始</div>
-                            </div>
+                    <div class="duration-group">
+                        <div class="duration-row">
+                            <span class="duration-label">时 长</span>
+                            <input type="range" id="durationSlider" min="15" max="120" step="5" value="90">
+                            <span id="durationValue" class="duration-value">90秒</span>
                         </div>
+                        <div class="duration-ticks">
+                            <span>15秒</span>
+                            <span>30秒</span>
+                            <span>60秒</span>
+                            <span>90秒</span>
+                            <span>120秒</span>
+                        </div>
+                        <div class="duration-options" id="durationOptions">
+                            <button class="dur-btn" data-duration="30">30秒</button>
+                            <button class="dur-btn" data-duration="60">60秒</button>
+                            <button class="dur-btn active" data-duration="90">90秒</button>
+                            <button class="dur-btn" data-duration="120">120秒</button>
+                        </div>
+                    </div>
 
-                        <audio id="audioPlayer" preload="auto"></audio>
+                    <button id="generateBtn" class="btn-generate">生成音乐</button>
+                </section>
 
-                        <div class="custom-controls">
-                            <div class="progress-container">
-                                <div class="progress-track" id="progressTrack">
-                                    <div class="progress-current" id="progressCurrent" style="width:0%"></div>
-                                    <div class="progress-thumb" id="progressThumb" style="left:0%"></div>
+                <!-- Status area -->
+                <section id="statusSection" class="status-section hidden">
+                    <div id="statusMessage" class="status-message"></div>
+                    <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                </section>
+
+                <!-- Result section -->
+                <section id="resultSection" class="result-section hidden">
+                    <!-- Collapsible prompt -->
+                    <div class="collapsible-prompt">
+                        <div id="promptHeader" class="prompt-header">
+                            <span class="ornament">⚜️</span>
+                            <span class="title">优化后提示词</span>
+                            <span id="promptArrow" class="arrow collapsed">❮</span>
+                        </div>
+                        <div id="promptBody" class="prompt-body">
+                            <div id="enhancedPrompt" class="enhanced-prompt-text"></div>
+                        </div>
+                    </div>
+
+                    <!-- Record player -->
+                    <div class="record-player">
+                        <div class="player-card">
+                            <div class="player-top">
+                                <div class="vinyl-disc">
+                                    <div class="vinyl-label"></div>
+                                </div>
+                                <div class="player-meta">
+                                    <div class="now-playing">正在播放</div>
+                                    <div class="meta-sub" id="playerMeta">选择音乐开始</div>
                                 </div>
                             </div>
-                            <div class="time-display">
-                                <span id="currentTime">00:00</span>
-                                <span id="totalTime">00:00</span>
-                            </div>
-                            <div class="controls-row">
-                                <button id="prevBtn" class="ctrl-btn" title="上一首">⏮</button>
-                                <button id="playBtn" class="play-btn">▶</button>
-                                <button id="nextBtn" class="ctrl-btn" title="下一首">⏭</button>
-                                <div class="volume-group">
-                                    <span class="volume-icon">♬</span>
-                                    <div class="volume-slider">
-                                        <div class="volume-fill" id="volumeFill" style="width:70%"></div>
-                                        <input type="range" id="volumeRange" min="0" max="100" value="70">
+
+                            <audio id="audioPlayer" preload="auto"></audio>
+
+                            <div class="custom-controls">
+                                <div class="progress-container">
+                                    <div class="progress-track" id="progressTrack">
+                                        <div class="progress-current" id="progressCurrent" style="width:0%"></div>
+                                        <div class="progress-thumb" id="progressThumb" style="left:0%"></div>
+                                    </div>
+                                </div>
+                                <div class="time-display">
+                                    <span id="currentTime">00:00</span>
+                                    <span id="totalTime">00:00</span>
+                                </div>
+                                <div class="controls-row">
+                                    <button id="prevBtn" class="ctrl-btn" title="上一首">⏮</button>
+                                    <button id="playBtn" class="play-btn">▶</button>
+                                    <button id="nextBtn" class="ctrl-btn" title="下一首">⏭</button>
+                                    <div class="volume-group">
+                                        <span class="volume-icon">♬</span>
+                                        <div class="volume-slider">
+                                            <div class="volume-fill" id="volumeFill" style="width:70%"></div>
+                                            <input type="range" id="volumeRange" min="0" max="100" value="70">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="player-actions">
-                            <a id="downloadLink" class="btn-download" download>下载</a>
+                            <div class="player-actions">
+                                <a id="downloadLink" class="btn-download" download>下载</a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </section>
+
+            <!-- Right: queue panel -->
+            <aside class="right-panel">
+                <div class="queue-panel">
+                    <h3 class="queue-title">♬ 任务队列</h3>
+                    <div id="queueList" class="queue-list"></div>
+                </div>
+            </aside>
         </main>
     </div>
 
