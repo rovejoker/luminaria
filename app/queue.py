@@ -43,10 +43,16 @@ class SSEBroadcaster:
 
 class QueuedTask:
     """Internal task with cancel event and state."""
-    def __init__(self, task_id: str, user_input: str, duration: int):
+    def __init__(self, task_id: str, user_input: str, duration: int,
+                 steps: int = 25, cfg_scale: float = 6.0, seed: int = -1,
+                 sampler: str = "pingpong"):
         self.task_id = task_id
         self.user_input = user_input
         self.duration = duration
+        self.steps = steps
+        self.cfg_scale = cfg_scale
+        self.seed = seed
+        self.sampler = sampler
         self.status = TaskStatus.QUEUED
         self.progress = 0
         self.message = "排队中"
@@ -61,6 +67,10 @@ class QueuedTask:
             "status": self.status.value,
             "user_input": self.user_input,
             "duration": self.duration,
+            "steps": self.steps,
+            "cfg_scale": self.cfg_scale,
+            "seed": self.seed,
+            "sampler": self.sampler,
             "progress": self.progress,
             "message": self.message,
             "position": position,
@@ -97,11 +107,13 @@ class TaskQueue:
         if self._worker:
             self._worker.cancel()
 
-    async def enqueue(self, user_input: str, duration: int) -> str:
+    async def enqueue(self, user_input: str, duration: int,
+                     steps: int = 25, cfg_scale: float = 6.0, seed: int = -1,
+                     sampler: str = "pingpong") -> str:
         if len(self._pending) >= self._max_queued:
             raise RuntimeError("队列已满（最多 20 个排队任务）")
         task_id = uuid.uuid4().hex[:12]
-        task = QueuedTask(task_id, user_input, duration)
+        task = QueuedTask(task_id, user_input, duration, steps, cfg_scale, seed, sampler)
         self._pending.append(task)
         self._tasks[task_id] = task
         self._queue_event.set()
@@ -195,7 +207,8 @@ class TaskQueue:
         wav_path = None
         try:
             wav_path, actual_duration = await asyncio.wait_for(
-                asyncio.to_thread(generate_audio, enhanced_prompt, task.duration),
+                asyncio.to_thread(generate_audio, enhanced_prompt, task.duration,
+                                  task.steps, task.cfg_scale, task.seed, task.sampler),
                 timeout=GENERATION_TIMEOUT_SECONDS,
             )
         except asyncio.TimeoutError:
@@ -269,6 +282,10 @@ class TaskQueue:
             "filename": filename,
             "enhanced": was_enhanced,
             "created_at": task.created_at,
+            "steps": task.steps,
+            "cfg_scale": task.cfg_scale,
+            "seed": task.seed,
+            "sampler": task.sampler,
         }
         self._recently_done.append(task)
         await self._broadcast()

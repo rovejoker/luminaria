@@ -1,0 +1,85 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: ♬
+      - generic [ref=e6]: LuminAria
+  - main [ref=e7]:
+    - complementary [ref=e8]:
+      - generic [ref=e9]:
+        - heading "◇ 高级参数 ◇" [level=3] [ref=e10]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]: 采样步数
+            - generic [ref=e14]: "25"
+          - generic [ref=e15]:
+            - button "15" [ref=e16] [cursor=pointer]
+            - button "25" [ref=e17] [cursor=pointer]
+            - button "50" [ref=e18] [cursor=pointer]
+            - button "100" [ref=e19] [cursor=pointer]
+          - slider [ref=e21] [cursor=pointer]: "25"
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: CFG 引导强度
+            - generic [ref=e25]: "6.0"
+          - slider [ref=e27] [cursor=pointer]: "60"
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: 随机种子
+            - generic [ref=e31]: "-1"
+          - generic [ref=e32]:
+            - spinbutton [ref=e33]: "-1"
+            - button "↻" [ref=e34] [cursor=pointer]
+          - generic [ref=e35]: 随机模式；固定数值可复现结果
+        - generic [ref=e36]:
+          - generic [ref=e38]: 采样器
+          - generic [ref=e39]:
+            - combobox [ref=e40] [cursor=pointer]:
+              - option "Ping-Pong（默认）" [selected]
+              - option "Euler（快速）"
+              - option "RK4（高精度）"
+              - option "DPM++（高质量）"
+            - text: ▾
+    - generic [ref=e42]:
+      - generic [ref=e43]: 描述你想要的音乐...
+      - textbox "描述你想要的音乐..." [ref=e44]:
+        - /placeholder: 例如：轻柔的钢琴曲，像下雨天的咖啡馆
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]: 时 长
+          - slider [ref=e48] [cursor=pointer]: "90"
+          - generic [ref=e49]: 90秒
+        - generic [ref=e50]:
+          - generic [ref=e51]: 15秒
+          - generic [ref=e52]: 30秒
+          - generic [ref=e53]: 60秒
+          - generic [ref=e54]: 90秒
+          - generic [ref=e55]: 120秒
+        - generic [ref=e56]:
+          - button "30秒" [ref=e57] [cursor=pointer]
+          - button "60秒" [ref=e58] [cursor=pointer]
+          - button "90秒" [ref=e59] [cursor=pointer]
+          - button "120秒" [ref=e60] [cursor=pointer]
+      - button "生成音乐" [disabled] [ref=e61]
+    - complementary [ref=e62]:
+      - generic [ref=e63]:
+        - heading "♬ 任务队列" [level=3] [ref=e64]
+        - generic [ref=e66]: 暂无排队任务
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - heading "📜 历史记录" [level=3] [ref=e70]
+            - button "🗑" [ref=e71] [cursor=pointer]
+          - generic [ref=e72]:
+            - generic "[⻛格：电影感抒情⼩提琴独奏，如歌般流畅，G⼤调，⾃由节奏(Rubato)，65 BPM] [总时⻓：2分钟] [0:00-0:15] [前奏：缓慢的上⾏⾳阶，从⼩字组G到⼩字⼆组D] （轻柔温和的运⼸，温暖的氛围，确⽴调性） [0:15-0:45] [主歌：级进运动，连贯的旋律线条，平滑的连奏] （平静⽽温柔，旋律主要在⼩字⼆组B附近徘徊，表达安静的怀旧感） [0:45-1:00] [预副歌：旋律模进上⾏，张⼒逐渐增加] （⾳程跨度拉⼤，揉弦幅度稍微加快，为⾼潮积蓄期待感） [1:00-1:30] [副歌：旋律激昂上扬，⼤跳⾄⾼⾳G5，情感的最⾼潮] （充满激情与淡淡的忧伤，带有富有表现⼒的滑⾳，表达深切的思念） [1:30-1:45] [桥段：下⾏的半⾳阶线条，⾳⾊转为忧伤] （⼒度减弱，带有⼩调的⾊彩，仿佛在对回忆进⾏沉思） [1:45-2:00] [尾奏：下⾏纯五度回落，速度渐慢，逐渐淡出] （回归平静，以柔和的泛⾳结束，归于寂静）" [ref=e73] [cursor=pointer]:
+              - generic [ref=e74]: "[⻛格：电影感抒情⼩提琴独奏，如歌般流畅，G⼤调，⾃由节奏(Rubato)，65 BPM] [总时⻓：2分钟] [0:00-0:15] [前奏：缓慢的上⾏⾳阶，从⼩字组G到⼩字⼆组D] （轻柔温和的运⼸，温暖的氛围，确⽴调性） [0:15-0:45] [主歌：级进运动，连贯的旋律线条，平滑的连奏] （平静⽽温柔，旋律主要在⼩字⼆组B附近徘徊，表达安静的怀旧感） [0:45-1:00] [预副歌：旋律模进上⾏，张⼒逐渐增加] （⾳程跨度拉⼤，揉弦幅度稍微加快，为⾼潮积蓄期待感） [1:00-1:30] [副歌：旋律激昂上扬，⼤跳⾄⾼⾳G5，情感的最⾼潮] （充满激情与淡淡的忧伤，带有富有表现⼒的滑⾳，表达深切的思念） [1:30-1:45] [桥段：下⾏的半⾳阶线条，⾳⾊转为忧伤] （⼒度减弱，带有⼩调的⾊彩，仿佛在对回忆进⾏沉思） [1:45-2:00] [尾奏：下⾏纯五度回落，速度渐慢，逐渐淡出] （回归平静，以柔和的泛⾳结束，归于寂静）"
+              - generic [ref=e75]:
+                - button "▶" [ref=e76]
+                - link "↓" [ref=e77]:
+                  - /url: /output/luminaria_20260618_182149.mp3
+                - button "✕" [ref=e78]
+            - generic "[⻛格：电影感抒情⼩提琴独奏，如歌般流畅，G⼤调，⾃由节奏(Rubato)，65 BPM] [总时⻓：2分钟] [0:00-0:15] [前奏：缓慢的上⾏⾳阶，从⼩字组G到⼩字⼆组D] （轻柔温和的运⼸，温暖的氛围，确⽴调性） [0:15-0:45] [主歌：级进运动，连贯的旋律线条，平滑的连奏] （平静⽽温柔，旋律主要在⼩字⼆组B附近徘徊，表达安静的怀旧感） [0:45-1:00] [预副歌：旋律模进上⾏，张⼒逐渐增加] （⾳程跨度拉⼤，揉弦幅度稍微加快，为⾼潮积蓄期待感） [1:00-1:30] [副歌：旋律激昂上扬，⼤跳⾄⾼⾳G5，情感的最⾼潮] （充满激情与淡淡的忧伤，带有富有表现⼒的滑⾳，表达深切的思念） [1:30-1:45] [桥段：下⾏的半⾳阶线条，⾳⾊转为忧伤] （⼒度减弱，带有⼩调的⾊彩，仿佛在对回忆进⾏沉思） [1:45-2:00] [尾奏：下⾏纯五度回落，速度渐慢，逐渐淡出] （回归平静，以柔和的泛⾳结束，归于寂静）" [ref=e79] [cursor=pointer]:
+              - generic [ref=e80]: "[⻛格：电影感抒情⼩提琴独奏，如歌般流畅，G⼤调，⾃由节奏(Rubato)，65 BPM] [总时⻓：2分钟] [0:00-0:15] [前奏：缓慢的上⾏⾳阶，从⼩字组G到⼩字⼆组D] （轻柔温和的运⼸，温暖的氛围，确⽴调性） [0:15-0:45] [主歌：级进运动，连贯的旋律线条，平滑的连奏] （平静⽽温柔，旋律主要在⼩字⼆组B附近徘徊，表达安静的怀旧感） [0:45-1:00] [预副歌：旋律模进上⾏，张⼒逐渐增加] （⾳程跨度拉⼤，揉弦幅度稍微加快，为⾼潮积蓄期待感） [1:00-1:30] [副歌：旋律激昂上扬，⼤跳⾄⾼⾳G5，情感的最⾼潮] （充满激情与淡淡的忧伤，带有富有表现⼒的滑⾳，表达深切的思念） [1:30-1:45] [桥段：下⾏的半⾳阶线条，⾳⾊转为忧伤] （⼒度减弱，带有⼩调的⾊彩，仿佛在对回忆进⾏沉思） [1:45-2:00] [尾奏：下⾏纯五度回落，速度渐慢，逐渐淡出] （回归平静，以柔和的泛⾳结束，归于寂静）"
+              - generic [ref=e81]:
+                - button "▶" [ref=e82]
+                - link "↓" [ref=e83]:
+                  - /url: /output/luminaria_20260618_182113.mp3
+                - button "✕" [ref=e84]

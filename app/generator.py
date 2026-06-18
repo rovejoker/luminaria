@@ -53,12 +53,18 @@ def _load_model() -> None:
     logger.info(f"Model loaded on {device} (float16={model_half})")
 
 
-def generate_audio(prompt: str, duration_seconds: int) -> tuple[str, int]:
+def generate_audio(prompt: str, duration_seconds: int,
+                   steps: int = 25, cfg_scale: float = 6.0,
+                   seed: int = -1, sampler: str = "pingpong") -> tuple[str, int]:
     """Generate audio from a prompt and save as WAV.
 
     Args:
         prompt: English professional music prompt
         duration_seconds: Desired duration (30-120 seconds)
+        steps: Number of diffusion denoising steps (10-100, higher = better quality)
+        cfg_scale: Classifier-free guidance scale (1-15, higher = follows prompt more)
+        seed: Random seed (-1 = random, otherwise reproducible)
+        sampler: Rectified flow sampler type (pingpong, euler, rk4, dpmpp)
 
     Returns:
         (output_path, actual_duration_seconds) — path to the saved WAV file
@@ -85,8 +91,16 @@ def generate_audio(prompt: str, duration_seconds: int) -> tuple[str, int]:
     sample_rate = _model_config.get("sample_rate", SAMPLE_RATE)
     sample_size = _model_config["sample_size"]
 
+    # --- Set seed if requested ---
+    if seed != -1:
+        torch.manual_seed(seed)
+        logger.info(f"Seed set to {seed}")
+
     start_time = time.time()
-    logger.info(f"Generating {duration_seconds}s audio for prompt: {prompt[:100]}...")
+    logger.info(
+        f"Generating {duration_seconds}s audio | steps={steps} cfg_scale={cfg_scale} "
+        f"sampler={sampler} seed={seed} | prompt: {prompt[:100]}..."
+    )
 
     try:
         from stable_audio_tools.inference.generation import generate_diffusion_cond_inpaint
@@ -104,11 +118,11 @@ def generate_audio(prompt: str, duration_seconds: int) -> tuple[str, int]:
         with torch.no_grad():
             output = generate_diffusion_cond_inpaint(
                 model,
-                steps=15,
-                cfg_scale=3.0,
+                steps=steps,
+                cfg_scale=cfg_scale,
                 conditioning=conditioning,
                 sample_size=sample_size,
-                sampler_type="pingpong",
+                sampler_type=sampler,
                 device=device,
             )
 

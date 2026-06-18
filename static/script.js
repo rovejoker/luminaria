@@ -2,6 +2,10 @@
 
 const state = {
     duration: 90,
+    steps: 25,
+    cfgScale: 6.0,
+    seed: -1,
+    sampler: 'pingpong',
     generating: false,
     audioFilename: null,
     promptExpanded: false,
@@ -39,6 +43,61 @@ const volumeRange = $('#volumeRange');
 const volumeFill = $('#volumeFill');
 const playerMeta = $('#playerMeta');
 const downloadLink = $('#downloadLink');
+const stepsSlider = $('#stepsSlider');
+const stepsValue = $('#stepsValue');
+const stepsPresets = $('#stepsPresets');
+const cfgSlider = $('#cfgSlider');
+const cfgValue = $('#cfgValue');
+const seedInput = $('#seedInput');
+const seedRandomBtn = $('#seedRandomBtn');
+const seedValueDisplay = $('#seedValueDisplay');
+const samplerSelect = $('#samplerSelect');
+const centerPanel = $('.center-panel');
+
+// --- Advanced parameters sync ---
+// Steps slider + presets
+stepsSlider.addEventListener('input', () => {
+    state.steps = parseInt(stepsSlider.value);
+    stepsValue.textContent = state.steps;
+    stepsPresets.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.value) === state.steps);
+    });
+});
+stepsPresets.addEventListener('click', (e) => {
+    const btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    state.steps = parseInt(btn.dataset.value);
+    stepsSlider.value = state.steps;
+    stepsValue.textContent = state.steps;
+    stepsPresets.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+});
+
+// CFG slider (value stored as slider-value/10)
+cfgSlider.addEventListener('input', () => {
+    state.cfgScale = parseInt(cfgSlider.value) / 10;
+    cfgValue.textContent = state.cfgScale.toFixed(1);
+});
+
+// Seed
+seedInput.addEventListener('input', () => {
+    let val = parseInt(seedInput.value);
+    if (isNaN(val)) val = -1;
+    if (val < -1) val = -1;
+    state.seed = val;
+    seedValueDisplay.textContent = val;
+});
+seedRandomBtn.addEventListener('click', () => {
+    const rand = Math.floor(Math.random() * 2147483647);
+    seedInput.value = rand;
+    state.seed = rand;
+    seedValueDisplay.textContent = rand;
+});
+
+// Sampler
+samplerSelect.addEventListener('change', () => {
+    state.sampler = samplerSelect.value;
+});
 
 // --- Duration slider + buttons sync ---
 durationSlider.addEventListener('input', () => {
@@ -76,7 +135,14 @@ generateBtn.addEventListener('click', async () => {
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_input: userInput, duration: state.duration }),
+            body: JSON.stringify({
+                user_input: userInput,
+                duration: state.duration,
+                steps: state.steps,
+                cfg_scale: state.cfgScale,
+                seed: state.seed,
+                sampler: state.sampler,
+            }),
         });
 
         if (response.status === 429) {

@@ -17,8 +17,6 @@ from app.database import init_db, insert_generation, get_history, get_generation
 from app.prompt_enhancer import enhance_prompt
 from app.queue import TaskQueue, SSEBroadcaster
 
-import torch
-
 # --- Logging ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("luminaria")
@@ -65,6 +63,7 @@ app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 # --- Health check ---
 @app.get("/api/health")
 async def health():
+    import torch  # lazy import — avoid blocking startup
     gpu_available = torch.cuda.is_available()
     return {
         "status": "ok",
@@ -78,7 +77,10 @@ async def health():
 async def generate(request: GenerateRequest):
     """Submit a generation request. Returns task_id immediately."""
     try:
-        task_id = await _task_queue.enqueue(request.user_input, request.duration)
+        task_id = await _task_queue.enqueue(
+            request.user_input, request.duration,
+            request.steps, request.cfg_scale, request.seed, request.sampler,
+        )
         return {"task_id": task_id, "status": "queued"}
     except RuntimeError as e:
         raise HTTPException(status_code=429, detail=str(e))

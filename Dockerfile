@@ -39,6 +39,6 @@ ENV HF_ENDPOINT=https://hf-mirror.com
 # Create necessary directories
 RUN mkdir -p /app/output /app/data
 
-EXPOSE 8000
+EXPOSE 8989
 
-CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python3", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8989"]

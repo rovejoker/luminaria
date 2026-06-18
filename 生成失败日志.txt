@@ -1,0 +1,37 @@
+av
+luminaria  | INFO:     172.18.0.1:55420 - "GET /api/history?limit=10 HTTP/1.1" 200 OK
+luminaria  | INFO:     172.18.0.1:55420 - "GET /output/luminaria_20260618_182149.mp3 HTTP/1.1" 200 OK
+luminaria  | INFO:     172.18.0.1:32862 - "POST /api/generate HTTP/1.1" 200 OK
+luminaria  | 2026-06-18 18:22:10,072 [INFO] httpx: HTTP Request: POST https://api.deepseek.com/v1/chat/completions "HTTP/1.1 200 OK"
+luminaria  | INFO:     172.18.0.1:32862 - "POST /api/generate HTTP/1.1" 200 OK
+luminaria  | 2026-06-18 18:22:17,529 [INFO] app.prompt_enhancer: Prompt enhanced (1006 chars): A filmic lyrical violin solo in G major, unfolding at a gentle 65 BPM with a rubato, song-like flow. The piece opens wit...
+luminaria  | 2026-06-18 18:22:17,530 [INFO] app.generator: Model device: cuda, inference device: cuda
+luminaria  | 2026-06-18 18:22:17,535 [INFO] app.generator: Seed set to 550390088
+luminaria  | 2026-06-18 18:22:17,535 [INFO] app.generator: Generating 120s audio | steps=25 cfg_scale=4.5 sampler=ddim seed=550390088 | prompt: A filmic lyrical violin solo in G major, unfolding at a gentle 65 BPM with a rubato, song-like flow....
+luminaria  | 2026-06-18 18:22:17,639 [ERROR] app.generator: Audio generation failed
+luminaria  | Traceback (most recent call last):
+luminaria  |   File "/app/app/generator.py", line 119, in generate_audio
+luminaria  |     output = generate_diffusion_cond_inpaint(
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/stable_audio_tools/inference/generation.py", line 571, in generate_diffusion_cond_inpaint
+luminaria  |     sampled = sample_diffusion(
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+luminaria  |     return func(*args, **kwargs)
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/stable_audio_tools/inference/sampling.py", line 920, in sample_diffusion
+luminaria  |     raise ValueError(f"Unknown sampler_type for {diffusion_objective}: {sampler_type}")
+luminaria  | ValueError: Unknown sampler_type for rf_denoiser: ddim
+luminaria  | 2026-06-18 18:22:17,833 [INFO] httpx: HTTP Request: POST https://api.deepseek.com/v1/chat/completions "HTTP/1.1 200 OK"
+luminaria  | 2026-06-18 18:22:24,908 [INFO] app.prompt_enhancer: Prompt enhanced (998 chars): A filmic, lyrical violin solo in G major with rubato phrasing at 65 BPM, opening with a slow, gentle ascending scale fro...
+luminaria  | 2026-06-18 18:22:24,909 [INFO] app.generator: Model device: cuda, inference device: cuda
+luminaria  | 2026-06-18 18:22:24,911 [INFO] app.generator: Seed set to 550390088
+luminaria  | 2026-06-18 18:22:24,911 [INFO] app.generator: Generating 120s audio | steps=25 cfg_scale=4.5 sampler=dpmpp-2m-sde seed=550390088 | prompt: A filmic, lyrical violin solo in G major with rubato phrasing at 65 BPM, opening with a slow, gentle...
+luminaria  | 2026-06-18 18:22:24,970 [ERROR] app.generator: Audio generation failed
+luminaria  | Traceback (most recent call last):
+luminaria  |   File "/app/app/generator.py", line 119, in generate_audio
+luminaria  |     output = generate_diffusion_cond_inpaint(
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/stable_audio_tools/inference/generation.py", line 571, in generate_diffusion_cond_inpaint
+luminaria  |     sampled = sample_diffusion(
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+luminaria  |     return func(*args, **kwargs)
+luminaria  |   File "/usr/local/lib/python3.10/dist-packages/stable_audio_tools/inference/sampling.py", line 920, in sample_diffusion
+luminaria  |     raise ValueError(f"Unknown sampler_type for {diffusion_objective}: {sampler_type}")
+luminaria  | ValueError: Unknown sampler_type for rf_denoiser: dpmpp-2m-sde

@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: luminaria
     ports:
-      - "8000:8000"
+      - "8989:8989"
     volumes:
       - model_cache:/root/.cache/huggingface
       - ./output:/app/output

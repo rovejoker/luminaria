@@ -32,7 +32,7 @@ DEEPSEEK_TIMEOUT_SECONDS = 30
 
 # --- Server ---
 HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", "8000"))
+PORT = int(os.getenv("PORT", "8989"))
 
 # --- Ensure directories exist ---
 os.makedirs(OUTPUT_DIR, exist_ok=True)

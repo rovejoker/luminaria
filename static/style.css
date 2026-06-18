@@ -1,5 +1,5 @@
 /* LuminAria — Victorian Classical theme */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=ZCOOL+QingKe+HuangYou&display=swap');
+/* Fonts loaded via <link> in HTML for non-blocking parallel fetch */
 
 :root {
   --bg-primary: #0d0c0a;
@@ -27,10 +27,15 @@
 
 body {
   font-family: var(--font-body);
-  background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 10%, rgba(80,50,50,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 85% 80%, rgba(100,55,35,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 40%, rgba(40,22,22,0.15) 0%, transparent 75%),
+    linear-gradient(175deg, #12100d 0%, #15110e 30%, #0f0d0a 60%, #110e0b 100%);
+  background-attachment: fixed;
 }
 
 .app-container {
@@ -726,6 +731,146 @@ audio {
   /* reserved for future advanced settings */
   min-height: 200px;
 }
+
+/* ── Advanced Parameters Card (left panel) ── */
+.params-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.params-title {
+  font-size: 0.8rem;
+  color: var(--gold-dim);
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.param-group {
+  margin-bottom: 12px;
+  background: rgba(18, 16, 14, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.param-group:hover {
+  border-color: var(--gold);
+  border-color: rgba(201, 168, 76, 0.25);
+  box-shadow: 0 0 12px rgba(201, 168, 76, 0.06);
+}
+.param-group:last-child { margin-bottom: 0; }
+
+.param-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+.param-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  letter-spacing: 1.5px;
+}
+.param-value {
+  font-size: 0.78rem;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+.param-hint {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.param-row      { display:flex; align-items:center; gap:4px; }
+.param-row-solo { display:flex; align-items:center; }
+
+.param-slider {
+  -webkit-appearance: none; appearance: none;
+  flex: 1; height: 3px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright), var(--gold-dim));
+  border-radius:2px; outline:none; cursor:pointer; transition:0.15s;
+}
+.param-slider::-webkit-slider-track { height:3px; background:transparent; border-radius:2px; }
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+  background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
+  border:1.5px solid #5a4a20; box-shadow:0 0 8px var(--gold-glow);
+  cursor:pointer; margin-top:-6px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.param-slider::-webkit-slider-thumb:hover {
+  box-shadow:0 0 14px rgba(201,168,76,0.3); transform:scale(1.1);
+}
+.param-slider::-moz-range-track  { height:3px; background:transparent; border-radius:2px; border:none; }
+.param-slider::-moz-range-thumb  {
+  width:14px; height:14px; border-radius:50%;
+  background: radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold-dim));
+  border:1.5px solid #5a4a20; box-shadow:0 0 8px var(--gold-glow); cursor:pointer;
+}
+
+/* presets */
+.param-presets { display:flex; gap:4px; margin-bottom:5px; }
+.preset-btn {
+  flex:1;
+  background:var(--bg-input); border:1px solid var(--border);
+  color:var(--text-muted); padding:3px 0; border-radius:3px;
+  cursor:pointer; font-family:var(--font-body); font-size:0.66rem;
+  letter-spacing:0.5px; transition:all 0.2s; text-align:center;
+}
+.preset-btn:hover { border-color:var(--gold-dim); color:var(--gold); box-shadow:0 0 8px rgba(201,168,76,0.08); }
+.preset-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); box-shadow:0 0 6px rgba(201,168,76,0.1); }
+
+/* seed */
+.seed-row { display:flex; gap:5px; align-items:center; }
+.seed-input {
+  flex:1; background:var(--bg-input); border:1px solid var(--border);
+  border-radius:3px; color:var(--text-primary); padding:4px 8px;
+  font-family:var(--font-mono); font-size:0.7rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance:textfield;
+}
+.seed-input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-glow); }
+.seed-input::-webkit-inner-spin-button,
+.seed-input::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+
+.seed-btn {
+  background:var(--bg-input); border:1px solid var(--border);
+  color:var(--text-muted); padding:4px 9px; border-radius:3px;
+  cursor:pointer; font-size:0.78rem; line-height:1;
+  transition:all 0.2s;
+}
+.seed-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(201,168,76,0.08); box-shadow:0 0 10px rgba(201,168,76,0.1); }
+
+/* select */
+.select-wrapper { position:relative; }
+.select-wrapper::after {
+  content:'▾'; position:absolute; right:10px; top:50%;
+  transform:translateY(-50%); color:var(--gold-dim); font-size:0.65rem;
+  pointer-events:none; transition:color 0.2s;
+}
+.select-wrapper:hover::after { color:var(--gold); }
+
+.param-select {
+  width:100%; background:var(--bg-input); border:1px solid var(--border);
+  border-radius:3px; color:var(--text-primary); padding:5px 24px 5px 8px;
+  font-family:var(--font-body); font-size:0.7rem; cursor:pointer;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance:none; appearance:none;
+}
+.param-select:hover { border-color:var(--gold); }
+.param-select:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 2px var(--gold-glow); }
+.param-select option { background:var(--bg-secondary); color:var(--text-primary); font-family:var(--font-body); font-size:0.7rem; }
 
 .center-panel {
   min-width: 0;

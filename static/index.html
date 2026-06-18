@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LuminAria — AI 音乐生成</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -19,7 +25,67 @@
         <!-- Three-column layout -->
         <main class="main-content">
             <!-- Left: reserved for future advanced settings -->
-            <aside class="left-panel"></aside>
+            <aside class="left-panel">
+                <div class="params-card">
+                    <h3 class="params-title">◇ 高级参数 ◇</h3>
+
+                    <!-- Sampling Steps -->
+                    <div class="param-group">
+                        <div class="param-label-row">
+                            <label class="param-label">采样步数</label>
+                            <span class="param-value" id="stepsValue">25</span>
+                        </div>
+                        <div class="param-presets" id="stepsPresets">
+                            <button class="preset-btn" data-value="15">15</button>
+                            <button class="preset-btn active" data-value="25">25</button>
+                            <button class="preset-btn" data-value="50">50</button>
+                            <button class="preset-btn" data-value="100">100</button>
+                        </div>
+                        <div class="param-row param-row-solo">
+                            <input type="range" id="stepsSlider" class="param-slider" min="10" max="100" value="25">
+                        </div>
+                    </div>
+
+                    <!-- CFG Scale -->
+                    <div class="param-group">
+                        <div class="param-label-row">
+                            <label class="param-label">CFG 引导强度</label>
+                            <span class="param-value" id="cfgValue">6.0</span>
+                        </div>
+                        <div class="param-row param-row-solo">
+                            <input type="range" id="cfgSlider" class="param-slider" min="10" max="150" value="60" step="5">
+                        </div>
+                    </div>
+
+                    <!-- Seed -->
+                    <div class="param-group">
+                        <div class="param-label-row">
+                            <label class="param-label">随机种子</label>
+                            <span class="param-value" id="seedValueDisplay">-1</span>
+                        </div>
+                        <div class="seed-row">
+                            <input type="number" id="seedInput" class="seed-input" value="-1" min="-1" max="2147483647">
+                            <button id="seedRandomBtn" class="seed-btn" title="随机种子">↻</button>
+                        </div>
+                        <span class="param-hint">随机模式；固定数值可复现结果</span>
+                    </div>
+
+                    <!-- Sampler -->
+                    <div class="param-group">
+                        <div class="param-label-row">
+                            <label class="param-label">采样器</label>
+                        </div>
+                        <div class="select-wrapper">
+                            <select id="samplerSelect" class="param-select">
+                                <option value="pingpong" selected>Ping-Pong（默认）</option>
+                                <option value="euler">Euler（快速）</option>
+                                <option value="rk4">RK4（高精度）</option>
+                                <option value="dpmpp">DPM++（高质量）</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </aside>
 
             <!-- Center: input + status + result -->
             <section class="center-panel">

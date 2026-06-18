@@ -5,10 +5,21 @@ from pydantic import BaseModel, Field
 
 
 
+SAMPLER_OPTIONS = (
+    "pingpong",
+    "euler",
+    "rk4",
+    "dpmpp",
+)
+
 class GenerateRequest(BaseModel):
     """POST /api/generate request body."""
     user_input: str = Field(..., min_length=1, max_length=5000, description="User's natural language description")
     duration: int = Field(..., ge=15, le=120, description="Desired audio duration in seconds")
+    steps: int = Field(default=25, ge=10, le=100, description="Diffusion sampling steps")
+    cfg_scale: float = Field(default=6.0, ge=1.0, le=15.0, description="Classifier-free guidance scale")
+    seed: int = Field(default=-1, ge=-1, le=2**31-1, description="Random seed (-1 = random)")
+    sampler: str = Field(default="pingpong", description="Diffusion sampler type")
 
 
 class GenerateResponse(BaseModel):
