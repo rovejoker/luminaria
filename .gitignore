@@ -1,10 +1,26 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-output/
-data/
-.env
 .venv/
 *.egg-info/
+.pytest_cache/
+
+# Data & outputs
+output/
+data/
+
+# Secrets
+.env
+
+# Dev / debug artifacts
 .superpowers/
 .playwright-mcp/
+
+# Screenshots (playwright / manual debug)
+*.png
+
+# Snapshot / debug text files
+*.yml
+*.txt
+*.log
