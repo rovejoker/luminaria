@@ -7,3 +7,4 @@ data/
 .venv/
 *.egg-info/
 .superpowers/
+.playwright-mcp/
